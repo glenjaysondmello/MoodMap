@@ -21,9 +21,9 @@ type MoodAnalyticsOutput {
 }
 
 type Query {
-  getTodayMood(userId: String!): MoodEntry
-  getMoodHistory(range: DateRangeInput!, userId: String!): [MoodEntry!]!
-  getMoodStats(userId: String!): MoodAnalyticsOutput!
+  getTodayMood: MoodEntry
+  getMoodHistory(range: DateRangeInput!): [MoodEntry!]!
+  getMoodStats: MoodAnalyticsOutput!
 }
 
 input DateRangeInput {
@@ -32,9 +32,9 @@ input DateRangeInput {
 }
 
 type Mutation {
-  logMood(input: MoodLogInput!, userId: String!): MoodEntry!
-  updateMood(id: String!, input: MoodLogInput!, userId: String!): MoodEntry!
-  deleteMood(id: String!, userId: String!): Boolean!
+  logMood(input: MoodLogInput!): MoodEntry!
+  updateMood(id: String!, input: MoodLogInput!): MoodEntry!
+  deleteMood(id: String!): Boolean!
 }
 
 input MoodLogInput {

@@ -69,14 +69,14 @@ query GetMoodHistory($range: DateRangeInput!, $userId: String!) {
 ''';
 
 const String getMoodStatsQuery = r'''
-query GetMoodStats($userId: String!) {
-  getMoodStats(userId: $userId) {
-    totalEntries
-    moodCounts {
-      mood
-      count
-    }
-    averageSentiment
+query GetMoodStats {
+  getMoodStats {
+    averageMoodScore
+    moodCount
+    positiveDays
+    negativeDays
+    mostUsedWords
+    streak
   }
 }
 ''';
