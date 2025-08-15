@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:provider/provider.dart';
 import '../graphql/graphql_documents.dart';
-import '../provider//auth_provider.dart';
+import '../provider/auth_provider.dart';
+import '../screens/log_mood_screen.dart';
+import '../screens/history_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,15 +14,71 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  Map<String, dynamic>? todayMood;
+  bool isLoading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTodayMood();
+  }
+
+  Future<void> _fetchTodayMood() async {
+    try {
+      final client = GraphQLProvider.of(context).value;
+      final result = await client.query(
+        QueryOptions(
+          document: gql(getTodayMoodQuery),
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (result.hasException) {
+        setState(() {
+          error = result.exception.toString();
+          isLoading = false;
+        });
+        return;
+      }
+
+      setState(() {
+        todayMood = result.data?['getTodayMood'];
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        error = e.toString();
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
-    Future<void> _signOut() async {
+    Future<void> signOut() async {
       final nav = Navigator.of(context);
       await authProvider.signOut();
       nav.pushReplacementNamed('/auth');
+    }
+
+    if (isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (error != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Clarity'),
+          actions: [
+            IconButton(icon: const Icon(Icons.logout), onPressed: signOut),
+          ],
+        ),
+        body: Center(child: Text('Error: $error')),
+      );
     }
 
     return Scaffold(
@@ -42,10 +100,57 @@ class _HomePageState extends State<HomePage> {
         ),
 
         actions: [
-          IconButton(onPressed: _signOut, icon: const Icon(Icons.logout)),
+          IconButton(onPressed: signOut, icon: const Icon(Icons.logout)),
         ],
       ),
-      body: Padding(padding: const EdgeInsets.all(16)),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: ListView(
+          children: [
+            Card(
+              child: ListTile(
+                title: const Text('Today’s Mood'),
+                subtitle: Text(
+                  todayMood == null
+                      ? 'Not logged yet'
+                      : '${todayMood!['mood']} - ${todayMood!['journalText']}',
+                ),
+                trailing: FilledButton(
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LogMoodScreen()),
+                    );
+
+                    _fetchTodayMood();
+                  },
+                  child: Text(todayMood == null ? 'Log Now' : 'Update'),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            Card(
+              child: ListTile(
+                title: const Text('History & Insights'),
+                subtitle: const Text('View logs, range filter, and stats'),
+                trailing: OutlinedButton(
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => HistoryScreen()),
+                    );
+
+                    _fetchTodayMood();
+                  },
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

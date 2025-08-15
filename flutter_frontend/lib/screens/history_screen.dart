@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../provider/auth_provider.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../graphql/graphql_documents.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -18,8 +20,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.user;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('History & Insights')),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Text('History & Insights'),
+            const SizedBox(width: 10),
+            if (user?.photoURL != null)
+              CircleAvatar(backgroundImage: NetworkImage(user!.photoURL!))
+            else
+              CircleAvatar(child: Icon(Icons.person)),
+
+            const SizedBox(width: 1),
+
+            Text(
+              user?.displayName ?? 'Guest',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
       body: Column(
         children: [
           Padding(

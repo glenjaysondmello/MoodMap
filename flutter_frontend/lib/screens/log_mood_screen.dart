@@ -26,12 +26,31 @@ class _LogMoodScreenState extends State<LogMoodScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userId = authProvider.user?.uid;
+    final user = authProvider.user;
+    final userId = user?.uid;
 
     if (userId == null) throw Exception('No logged-in user');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Log Mood')),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Text('Log Mood'),
+            const SizedBox(width: 10),
+            if (user?.photoURL != null)
+              CircleAvatar(backgroundImage: NetworkImage(user!.photoURL!))
+            else
+              CircleAvatar(child: Icon(Icons.person)),
+
+            const SizedBox(width: 1),
+
+            Text(
+              user?.displayName ?? 'Guest',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
       body: Mutation(
         options: MutationOptions(
           document: gql(logMoodMutation),
