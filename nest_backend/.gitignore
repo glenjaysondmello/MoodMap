@@ -3,7 +3,7 @@
 /node_modules
 /build
 
-serviceAccount.json
+serviceAccountKey.json
 
 # Logs
 logs
