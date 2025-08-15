@@ -3,6 +3,8 @@
 /node_modules
 /build
 
+serviceAccount.json
+
 # Logs
 logs
 *.log
