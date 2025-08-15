@@ -73,12 +73,101 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
           Expanded(
             child: Query(
-              options: QueryOptions(document: gql(getMoodHistoryQuery)),
-              builder: builder,
+              options: QueryOptions(
+                document: gql(getMoodHistoryQuery),
+                variables: {
+                  "range": {"startDate": _iso(_start), "endDate": _iso(_end)},
+                },
+                fetchPolicy: FetchPolicy.networkOnly,
+              ),
+              builder: (result, {refetch, fetchMore}) {
+                if (result.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (result.hasException) {
+                  return Center(child: Text('Error: ${result.exception}'));
+                }
+
+                final items = (result.data?['getMoodHistory'] as List?) ?? [];
+
+                if (items.isEmpty) {
+                  return const Center(child: Text('No entries in this range.'));
+                }
+
+                return ListView.separated(
+                  itemBuilder: (context, i) {
+                    final e = items[i] as Map<String, dynamic>;
+
+                    return ListTile(
+                      leading: CircleAvatar(child: Text((e['mood'] ?? '?')[0])),
+                      title: Text('${e['date']} - ${e['mood']}'),
+                      subtitle: Text(e['journalText'] ?? ''),
+                      trailing: Text(
+                        e['sentimentScore'] == null
+                            ? '-'
+                            : (e['sentimentScore'] as num).toStringAsFixed(2),
+                        style: const TextStyle(
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    );
+                  },
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemCount: items.length,
+                );
+              },
+            ),
+          ),
+
+          const Divider(height: 1),
+
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Query(
+              options: QueryOptions(
+                document: gql(getMoodStatsQuery),
+                fetchPolicy: FetchPolicy.networkOnly,
+              ),
+              builder: (result, {refetch, fetchMore}) {
+                if (result.isLoading) {
+                  return const SizedBox(
+                    height: 56,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                if (result.hasException) {
+                  return Text('Stats error: ${result.exception}');
+                }
+
+                final s = result.data?['getMoodStats'];
+                if (s == null) return const SizedBox.shrink();
+
+                return Wrap(
+                  spacing: 16,
+                  runSpacing: 8,
+                  children: [
+                    _chip(
+                      'Avg Score',
+                      (s['averageMoodScore'] as num?)?.toStringAsFixed(2) ??
+                          '-',
+                    ),
+                    _chip('Entries', '${s['moodCount']}'),
+                    _chip('Positive Days', '${s['positiveDays']}'),
+                    _chip('Negative Days', '${s['negativeDays']}'),
+                    _chip('Streak', '${s['streak']}'),
+                    _chip('Top Words', (s['mostUsedWords'] as List).join(', ')),
+                  ],
+                );
+              },
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _chip(String label, String value) {
+    return Chip(label: Text('$label: $value'));
   }
 }
