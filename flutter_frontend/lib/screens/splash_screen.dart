@@ -12,20 +12,18 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuth();
-  }
 
-  Future<void> _checkAuth() async {
-    final nav = Navigator.of(context);
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (mounted) {
+        final nav = Navigator.of(context);
 
-    await Future.delayed(const Duration(seconds: 2));
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (user != null) {
-      nav.pushReplacementNamed('/home');
-    } else {
-      nav.pushReplacementNamed('/auth');
-    }
+        if (user != null) {
+          nav.pushReplacementNamed('/home');
+        } else {
+          nav.pushReplacementNamed('/auth');
+        }
+      }
+    });
   }
 
   @override

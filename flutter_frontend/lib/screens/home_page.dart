@@ -17,11 +17,16 @@ class _HomePageState extends State<HomePage> {
   Map<String, dynamic>? todayMood;
   bool isLoading = true;
   String? error;
+  bool _hasFetched = false;
 
   @override
-  void initState() {
-    super.initState();
-    _fetchTodayMood();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_hasFetched) {
+      _hasFetched = true;
+      _fetchTodayMood();
+    }
   }
 
   Future<void> _fetchTodayMood() async {

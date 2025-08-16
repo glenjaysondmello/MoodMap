@@ -57,6 +57,10 @@ class _LogMoodScreenState extends State<LogMoodScreen> {
           onCompleted: (dynamic data) {
             if (mounted) Navigator.pop(context);
           },
+          onError: (error) {
+            if (!mounted) return;
+            setState(() => _error = error.toString());
+          },
         ),
         builder: (runMutation, result) {
           Future<void> submit() async {
@@ -77,10 +81,6 @@ class _LogMoodScreenState extends State<LogMoodScreen> {
                 },
                 "userId": userId,
               });
-
-              if (result?.hasException == true) {
-                throw result!.exception!;
-              }
 
               if (mounted) Navigator.pop(context);
             } catch (e) {
