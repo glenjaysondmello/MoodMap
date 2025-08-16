@@ -79,7 +79,6 @@ class _LogMoodScreenState extends State<LogMoodScreen> {
                   "mood": _mood!.name,
                   "journalText": _journalCtrl.text.trim(),
                 },
-                "userId": userId,
               });
 
               if (mounted) Navigator.pop(context);

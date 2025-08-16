@@ -1,69 +1,53 @@
 // --- Mutations ---
 
 const String logMoodMutation = r'''
-mutation LogMood($input: MoodLogInput!, $userId: String!) {
-  logMood(input: $input, userId: $userId) {
+mutation LogMood($input: MoodLogInput!) {
+  logMood(input: $input) {
     _id
-    userId
-    date
     mood
     journalText
     sentimentScore
-    createdAt
-    updatedAt
   }
 }
 ''';
 
 const String updateMoodMutation = r'''
-mutation UpdateMood($id: String!, $input: MoodLogInput!, $userId: String!) {
-  updateMood(id: $id, input: $input, userId: $userId) {
+mutation UpdateMood($id: String!, $input: MoodLogInput!) {
+  updateMood(id: $id, input: $input) {
     _id
-    userId
-    date
     mood
     journalText
     sentimentScore
-    createdAt
-    updatedAt
   }
 }
 ''';
 
 const String deleteMoodMutation = r'''
-mutation DeleteMood($id: String!, $userId: String!) {
-  deleteMood(id: $id, userId: $userId)
+mutation DeleteMood($id: String!) {
+  deleteMood(id: $id)
 }
 ''';
 
 // --- Queries ---
 
 const String getTodayMoodQuery = r'''
-query GetTodayMood($userId: String!) {
-  getTodayMood(userId: $userId) {
+query GetTodayMood {
+  getTodayMood {
     _id
-    userId
-    date
     mood
     journalText
     sentimentScore
-    createdAt
-    updatedAt
   }
 }
 ''';
 
 const String getMoodHistoryQuery = r'''
-query GetMoodHistory($range: DateRangeInput!, $userId: String!) {
-  getMoodHistory(range: $range, userId: $userId) {
+query GetMoodHistory($range: DateRangeInput!) {
+  getMoodHistory(range: $range) {
     _id
-    userId
-    date
     mood
     journalText
     sentimentScore
-    createdAt
-    updatedAt
   }
 }
 ''';

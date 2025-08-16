@@ -100,7 +100,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 document: gql(getMoodHistoryQuery),
                 variables: {
                   "range": {"startDate": _iso(_start), "endDate": _iso(_end)},
-                  "userId": user!.uid,
                 },
                 fetchPolicy: FetchPolicy.networkOnly,
               ),

@@ -77,7 +77,7 @@ class _HomePageState extends State<HomePage> {
     if (error != null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Clarity'),
+          title: const Text('MoodMap'),
           actions: [
             IconButton(icon: const Icon(Icons.logout), onPressed: signOut),
           ],
@@ -114,7 +114,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Card(
               child: ListTile(
-                title: const Text('Today’s Mood'),
+                title: const Text('Todays Mood'),
                 subtitle: Text(
                   todayMood == null
                       ? 'Not logged yet'
