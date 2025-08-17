@@ -28,18 +28,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
         title: Row(
           children: [
             Text('History & Insights'),
-            const SizedBox(width: 10),
+            const SizedBox(width: 80),
             if (user?.photoURL != null)
               CircleAvatar(backgroundImage: NetworkImage(user!.photoURL!))
             else
               CircleAvatar(child: Icon(Icons.person)),
 
-            const SizedBox(width: 1),
+            // const SizedBox(width: 1),
 
-            Text(
-              user?.displayName ?? 'Guest',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            ),
+            // Text(
+            //   user?.displayName ?? 'Guest',
+            //   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            // ),
           ],
         ),
       ),

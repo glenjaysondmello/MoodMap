@@ -36,18 +36,18 @@ class _LogMoodScreenState extends State<LogMoodScreen> {
         title: Row(
           children: [
             Text('Log Mood'),
-            const SizedBox(width: 10),
+            const SizedBox(width: 100),
             if (user?.photoURL != null)
               CircleAvatar(backgroundImage: NetworkImage(user!.photoURL!))
             else
               CircleAvatar(child: Icon(Icons.person)),
 
-            const SizedBox(width: 1),
+            // const SizedBox(width: 1),
 
-            Text(
-              user?.displayName ?? 'Guest',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            ),
+            // Text(
+            //   user?.displayName ?? 'Guest',
+            //   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            // ),
           ],
         ),
       ),

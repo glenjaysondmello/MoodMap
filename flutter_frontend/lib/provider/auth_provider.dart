@@ -39,15 +39,17 @@ class AuthProvider with ChangeNotifier {
     try {
       await _auth.signOut();
 
-      final currentUser = _auth.currentUser;
-      if (currentUser != null) {
-        for (var info in currentUser.providerData) {
-          if (info.providerId == GoogleAuthProvider.PROVIDER_ID) {
-            await GoogleSignIn().signOut();
-            break;
-          }
-        }
-      }
+      // final currentUser = _auth.currentUser;
+      // if (currentUser != null) {
+      //   for (var info in currentUser.providerData) {
+      //     if (info.providerId == GoogleAuthProvider.PROVIDER_ID) {
+      //       await GoogleSignIn().signOut();
+      //       break;
+      //     }
+      //   }
+      // }
+
+      await GoogleSignIn().signOut();
     } catch (e) {
       debugPrint('Error signing out: $e');
     } finally {

@@ -4,6 +4,7 @@ const String logMoodMutation = r'''
 mutation LogMood($input: MoodLogInput!) {
   logMood(input: $input) {
     _id
+    date
     mood
     journalText
     sentimentScore
@@ -15,6 +16,7 @@ const String updateMoodMutation = r'''
 mutation UpdateMood($id: String!, $input: MoodLogInput!) {
   updateMood(id: $id, input: $input) {
     _id
+    date
     mood
     journalText
     sentimentScore
@@ -34,6 +36,7 @@ const String getTodayMoodQuery = r'''
 query GetTodayMood {
   getTodayMood {
     _id
+    date
     mood
     journalText
     sentimentScore
@@ -45,6 +48,7 @@ const String getMoodHistoryQuery = r'''
 query GetMoodHistory($range: DateRangeInput!) {
   getMoodHistory(range: $range) {
     _id
+    date
     mood
     journalText
     sentimentScore
