@@ -36,7 +36,6 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  // Your submission and google sign-in logic is already solid!
   Future<void> _submit(AuthProvider authProvider) async {
     if (!_formKey.currentState!.validate() || _isLoading) return;
     setState(() => _isLoading = true);
@@ -122,7 +121,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'TypeMaster',
+                            'ClarityKeys',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.poppins(
                               fontSize: 36,
