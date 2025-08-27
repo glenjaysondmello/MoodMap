@@ -72,7 +72,7 @@ query GetMoodStats {
 // typing
 
 const String submitTypingTestMutation = r'''
-mutation SubmitTypingTest($referenceText: String!, $userText: String!, $durationSec: Int!) {
+mutation SubmitTypingTest($referenceText: String!, $userText: String!, $durationSec: Float!) {
   submitTypingTest(referenceText: $referenceText, userText: $userText, durationSec: $durationSec) {
     id
     wpm
