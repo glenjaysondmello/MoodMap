@@ -6,6 +6,7 @@ import '../provider/auth_provider.dart';
 import './log_mood_screen.dart';
 import './history_screen.dart';
 import './typing_text_launcer.dart';
+import './dashboard_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -157,7 +158,6 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 12),
 
-            /// ✅ NEW: Typing Test Launcher
             Card(
               child: ListTile(
                 title: const Text('Typing Test'),
@@ -174,6 +174,28 @@ class _HomePageState extends State<HomePage> {
                     );
                   },
                   child: const Text('Start'),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.dashboard_outlined),
+                title: const Text('Dashboard'),
+                subtitle: const Text(
+                  'View your key metrics and recent activity.',
+                ),
+                trailing: ElevatedButton(
+                  // ElevatedButton often looks better here
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const DashboardPage()),
+                    );
+                  },
+                  child: const Text('View'),
                 ),
               ),
             ),

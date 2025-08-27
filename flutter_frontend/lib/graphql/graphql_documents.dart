@@ -99,7 +99,7 @@ const String getTypingTestQuery = r'''
 ''';
 
 const String generateTypingTestTextQuery = r'''
-  query GenerateTypingTestText {
-    generateTypingTestText
+  query GetTypingTestText {
+    getTypingTestText
   }
 ''';

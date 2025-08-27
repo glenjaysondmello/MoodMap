@@ -30,7 +30,7 @@ class TypingTestLauncherPage extends StatelessWidget {
       return;
     }
 
-    final String referenceText = result.data?['generateTypingTestText'];
+    final String referenceText = result.data?['getTypingTestText'];
 
     if (context.mounted) {
       Navigator.push(

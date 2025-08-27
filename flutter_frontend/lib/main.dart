@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_frontend/client/graphql_client.dart';
-import 'package:flutter_frontend/screens/typing_test_page.dart';
+import 'package:flutter_frontend/screens/dashboard_page.dart';
 import 'package:flutter_frontend/screens/typing_text_launcer.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'firebase_options.dart';
@@ -43,6 +43,7 @@ class MyApp extends StatelessWidget {
             '/auth': (ctx) => const AuthScreen(),
             '/home': (ctx) => const HomePage(),
             '/text': (ctx) => const TypingTestLauncherPage(),
+            'dashboard': (ctx) => const DashboardPage(),
           },
         ),
       ),

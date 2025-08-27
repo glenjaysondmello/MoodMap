@@ -43,9 +43,9 @@ class _TypingTestPageState extends State<TypingTestPage> {
   Future<void> _submitTest() async {
     _timer?.cancel();
     DateTime endTime = DateTime.now();
-    final int duration = _startTime != null
-        ? endTime.difference(_startTime!).inSeconds
-        : 60;
+    final double duration =
+        (_startTime != null ? endTime.difference(_startTime!).inSeconds : 60)
+            .toDouble();
 
     final userText = _controller.text.trim();
 
@@ -123,37 +123,91 @@ class _TypingTestPageState extends State<TypingTestPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Typing Test")),
+      appBar: AppBar(
+        title: Text(_submitted ? "Typing Test Result" : "Typing Test"),
+      ),
+      resizeToAvoidBottomInset:
+          true, // allow body to resize when keyboard opens
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Text(
-              "Reference: ${widget.referenceText}",
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              "Time left: $_seconds s",
-              style: const TextStyle(fontSize: 20),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _controller,
-              maxLines: 10,
-              enabled: _isRunning,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: "Start typing here...",
+        child: _submitted && _result != null
+            ? ListView(
+                children: [
+                  Text(
+                    "WPM: ${_result!['wpm']}",
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  Text(
+                    "CPM: ${_result!['cpm']}",
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  Text(
+                    "Accuracy: ${_result!['accuracy'].toStringAsFixed(2)}%",
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  Text(
+                    "Score: ${_result!['score'].toStringAsFixed(2)}",
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Mistakes:",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  ...(_result!['mistakes'] as List).map(
+                    (m) => Text(
+                      "${m['error']} → ${m['correction']} (${m['type']})",
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Suggestions:",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  ...(_result!['suggestions'] as List).map((s) => Text("• $s")),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Encouragement: ${_result!['encouragement']}",
+                    style: const TextStyle(color: Colors.green),
+                  ),
+                ],
+              )
+            : SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      "Reference: ${widget.referenceText}",
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      "Time left: $_seconds s",
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                    const SizedBox(height: 20),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxHeight: 200, // limit TextField height
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        maxLines: null,
+                        enabled: _isRunning,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: "Start typing here...",
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _isRunning ? _submitTest : _startTimer,
+                      child: Text(_isRunning ? "Submit" : "Start Test"),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isRunning ? _submitTest : _startTimer,
-              child: Text(_isRunning ? "Submit" : "Start Test"),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -20,10 +20,39 @@ type MoodAnalyticsOutput {
   streak: Int!
 }
 
+type Mistake {
+  error: String!
+  correction: String!
+  type: String!
+}
+
+type TypingTest {
+  id: ID!
+  uid: String!
+  referenceText: String!
+  userText: String!
+  durationSec: Float!
+  wpm: Float!
+  cpm: Float!
+  accuracy: Float!
+  mistakes: [Mistake!]!
+  score: Float!
+  suggestions: [String!]!
+  encouragement: String!
+  createdAt: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
 type Query {
   getTodayMood: MoodEntry
   getMoodHistory(range: DateRangeInput!): [MoodEntry!]!
   getMoodStats: MoodAnalyticsOutput!
+  getTypingTestText: String!
+  getTypingTests: [TypingTest!]!
 }
 
 input DateRangeInput {
@@ -35,6 +64,7 @@ type Mutation {
   logMood(input: MoodLogInput!): MoodEntry!
   updateMood(id: String!, input: MoodLogInput!): MoodEntry!
   deleteMood(id: String!): Boolean!
+  submitTypingTest(referenceText: String!, userText: String!, durationSec: Float!): TypingTest!
 }
 
 input MoodLogInput {
