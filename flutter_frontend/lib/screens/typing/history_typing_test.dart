@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:intl/intl.dart';
-import '../graphql/graphql_documents.dart';
+import '../../graphql/graphql_documents.dart';
 
 // Using the same theme colors for consistency
 const themeColors = {
@@ -191,12 +191,12 @@ class HistoryCard extends StatelessWidget {
               _StatItem(
                 icon: Icons.speed_outlined,
                 label: 'WPM',
-                value: test['wpm'].toString(),
+                value: (test['wpm'] as num).toStringAsFixed(1),
               ),
               _StatItem(
                 icon: Icons.dialpad_outlined,
                 label: 'CPM',
-                value: test['cpm'].toString(),
+                value: (test['cpm'] as num).toStringAsFixed(1),
               ),
               _StatItem(
                 icon: Icons.ads_click_outlined,

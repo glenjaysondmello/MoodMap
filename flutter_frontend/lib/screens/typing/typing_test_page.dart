@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:percent_indicator/percent_indicator.dart';
-import '../graphql/graphql_documents.dart';
+import '../../graphql/graphql_documents.dart';
 
 // A map to hold our theme colors for easy access
 const themeColors = {
@@ -253,12 +253,12 @@ class _TypingTestPageState extends State<TypingTestPage> {
               _StatCard(
                 icon: Icons.speed,
                 title: "WPM",
-                value: results['wpm'].toString(),
+                value: (results['wpm'] as num).toStringAsFixed(1),
               ).animate().fadeIn(delay: 300.ms).slideX(),
               _StatCard(
                 icon: Icons.dialpad,
                 title: "CPM",
-                value: results['cpm'].toString(),
+                value: (results['cpm'] as num).toStringAsFixed(1),
               ).animate().fadeIn(delay: 400.ms).slideX(),
               _StatCard(
                 icon: Icons.star,
@@ -270,7 +270,7 @@ class _TypingTestPageState extends State<TypingTestPage> {
           const SizedBox(height: 20),
           // Accuracy Gauge
           _buildAccuracyGauge(
-            results['accuracy'],
+            (results['accuracy'] as num).toDouble(),
           ).animate().fadeIn(delay: 600.ms).scale(),
           const SizedBox(height: 20),
           // Mistakes & Suggestions

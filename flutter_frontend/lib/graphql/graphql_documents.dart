@@ -91,6 +91,7 @@ const String getTypingTestQuery = r'''
   query GetTypingTests {
     getTypingTests {
       wpm
+      cpm
       accuracy
       score
       createdAt

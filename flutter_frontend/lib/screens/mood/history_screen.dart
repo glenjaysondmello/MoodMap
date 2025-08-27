@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../provider/auth_provider.dart';
+import '../../provider/auth_provider.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../graphql/graphql_documents.dart';
+import '../../graphql/graphql_documents.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_frontend/graphql/graphql_documents.dart';
-import 'package:flutter_frontend/screens/history_typing_test.dart';
+import 'package:flutter_frontend/screens/typing/history_typing_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';

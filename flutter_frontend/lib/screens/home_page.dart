@@ -1,206 +1,247 @@
 import 'package:flutter/material.dart';
-import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../graphql/graphql_documents.dart';
 import '../provider/auth_provider.dart';
-import './log_mood_screen.dart';
-import './history_screen.dart';
-import './typing_text_launcer.dart';
-import './dashboard_page.dart';
+import 'typing/typing_text_launcer.dart';
+import 'typing/dashboard_page.dart';
 
-class HomePage extends StatefulWidget {
+// Using the same theme colors for consistency
+const themeColors = {
+  'backgroundStart': Color(0xFF2A2A72),
+  'backgroundEnd': Color(0xFF009FFD),
+  'card': Color(0x22FFFFFF), // Semi-transparent white
+  'text': Colors.white,
+  'textFaded': Color(0xAAFFFFFF),
+  'accent': Color(0xFF00D2FF),
+  'primaryAction': Color(0xFF39FF14), // Neon green for the main button
+};
+
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  Map<String, dynamic>? todayMood;
-  bool isLoading = true;
-  String? error;
-  bool _hasFetched = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    if (!_hasFetched) {
-      _hasFetched = true;
-      _fetchTodayMood();
-    }
-  }
-
-  Future<void> _fetchTodayMood() async {
-    try {
-      final client = GraphQLProvider.of(context).value;
-      final result = await client.query(
-        QueryOptions(
-          document: gql(getTodayMoodQuery),
-          fetchPolicy: FetchPolicy.networkOnly,
-        ),
-      );
-
-      if (result.hasException) {
-        setState(() {
-          error = result.exception.toString();
-          isLoading = false;
-        });
-        return;
-      }
-
-      setState(() {
-        todayMood = result.data?['getTodayMood'];
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        error = e.toString();
-        isLoading = false;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
+    // The sign-out logic remains the same
     Future<void> signOut() async {
-      final nav = Navigator.of(context);
+      // Use a mounted check for safety in async gaps
+      if (!context.mounted) return;
       await authProvider.signOut();
-      nav.pushReplacementNamed('/auth');
-    }
-
-    if (isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    if (error != null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('MoodMap'),
-          actions: [
-            IconButton(icon: const Icon(Icons.logout), onPressed: signOut),
-          ],
-        ),
-        body: Center(child: Text('Error: $error')),
-      );
+      if (context.mounted) {
+        Navigator.of(context).pushReplacementNamed('/auth');
+      }
     }
 
     return Scaffold(
+      // 1. A transparent AppBar to blend with the gradient
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Row(
           children: [
-            if (user?.photoURL != null)
-              CircleAvatar(backgroundImage: NetworkImage(user!.photoURL!))
-            else
-              CircleAvatar(child: Icon(Icons.person)),
-
-            const SizedBox(width: 10),
-
-            Text(
-              user?.displayName ?? 'Guest',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            // A subtle border around the avatar to make it pop
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withAlpha(100),
+                  width: 2,
+                ),
+              ),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundImage: user?.photoURL != null
+                    ? NetworkImage(user!.photoURL!)
+                    : null,
+                child: user?.photoURL == null
+                    ? const Icon(Icons.person, size: 20)
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Use a flexible to prevent overflow if the name is long
+            Flexible(
+              child: Text(
+                user?.displayName ?? 'Guest',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: themeColors['text'],
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
-
         actions: [
-          IconButton(onPressed: signOut, icon: const Icon(Icons.logout)),
+          IconButton(
+            onPressed: signOut,
+            icon: const Icon(Icons.logout),
+            tooltip: 'Sign Out',
+            color: themeColors['text'],
+          ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ListView(
-          children: [
-            Card(
-              child: ListTile(
-                title: const Text('Todays Mood'),
-                subtitle: Text(
-                  todayMood == null
-                      ? 'Not logged yet'
-                      : '${todayMood!['mood']} - ${todayMood!['journalText']}',
-                ),
-                trailing: FilledButton(
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LogMoodScreen()),
-                    );
-
-                    _fetchTodayMood();
-                  },
-                  child: Text(todayMood == null ? 'Log Now' : 'Update'),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            Card(
-              child: ListTile(
-                title: const Text('History & Insights'),
-                subtitle: const Text('View logs, range filter, and stats'),
-                trailing: OutlinedButton(
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => HistoryScreen()),
-                    );
-
-                    _fetchTodayMood();
-                  },
-                  child: const Text('Open'),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            Card(
-              child: ListTile(
-                title: const Text('Typing Test'),
-                subtitle: const Text(
-                  '1-minute test, mistakes, WPM, CPM & score',
-                ),
-                trailing: OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TypingTestLauncherPage(),
-                      ),
-                    );
-                  },
-                  child: const Text('Start'),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.dashboard_outlined),
-                title: const Text('Dashboard'),
-                subtitle: const Text(
-                  'View your key metrics and recent activity.',
-                ),
-                trailing: ElevatedButton(
-                  // ElevatedButton often looks better here
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const DashboardPage()),
-                    );
-                  },
-                  child: const Text('View'),
-                ),
-              ),
-            ),
-          ],
+      extendBodyBehindAppBar: true,
+      // 2. The consistent gradient background
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              themeColors['backgroundStart']!,
+              themeColors['backgroundEnd']!,
+            ],
+          ),
         ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                // 3. A prominent, welcoming header
+                Text(
+                  'Welcome back,',
+                  style: GoogleFonts.poppins(
+                    fontSize: 28,
+                    color: themeColors['textFaded'],
+                  ),
+                ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
+                Text(
+                  user?.displayName ?? 'Guest',
+                  style: GoogleFonts.poppins(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: themeColors['text'],
+                    height: 1.2,
+                  ),
+                ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2),
+
+                const Spacer(flex: 1),
+
+                // 4. A large, primary action card for the Typing Test
+                _ActionCard(
+                  icon: Icons.keyboard_alt_outlined,
+                  title: 'Typing Test',
+                  subtitle: 'Challenge yourself and measure your speed.',
+                  buttonText: 'Start Now',
+                  isPrimary: true,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TypingTestLauncherPage(),
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.3),
+
+                const SizedBox(height: 20),
+
+                // 5. A secondary action card for the Dashboard
+                _ActionCard(
+                  icon: Icons.dashboard_outlined,
+                  title: 'Dashboard',
+                  subtitle: 'Analyze your performance and progress.',
+                  buttonText: 'View Stats',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DashboardPage()),
+                  ),
+                ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.3),
+
+                const Spacer(flex: 2),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A reusable custom widget for the action cards to keep the build method clean.
+class _ActionCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String buttonText;
+  final VoidCallback onPressed;
+  final bool isPrimary;
+
+  const _ActionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.buttonText,
+    required this.onPressed,
+    this.isPrimary = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: themeColors['card'],
+        borderRadius: BorderRadius.circular(20.0),
+        border: Border.all(color: Colors.white.withAlpha(30)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 40, color: themeColors['accent']),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: themeColors['text'],
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: themeColors['textFaded'],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          isPrimary
+              ? ElevatedButton(
+                  onPressed: onPressed,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: themeColors['primaryAction'],
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(buttonText),
+                )
+              : OutlinedButton(
+                  onPressed: onPressed,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: themeColors['text'],
+                    side: BorderSide(color: themeColors['textFaded']!),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(buttonText),
+                ),
+        ],
       ),
     );
   }

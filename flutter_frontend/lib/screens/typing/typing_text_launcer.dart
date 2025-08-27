@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
-import '../graphql/graphql_documents.dart';
-import './typing_test_page.dart';
+import '../../graphql/graphql_documents.dart';
+import 'typing_test_page.dart';
 
 class TypingTestLauncherPage extends StatelessWidget {
   const TypingTestLauncherPage({super.key});
