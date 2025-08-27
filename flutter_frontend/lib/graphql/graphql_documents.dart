@@ -68,3 +68,32 @@ query GetMoodStats {
   }
 }
 ''';
+
+// typing
+
+const String submitTypingTestMutation = r'''
+mutation SubmitTypingTest($referenceText: String!, $userText: String!, $durationSec: Int!) {
+  submitTypingTest(referenceText: $referenceText, userText: $userText, durationSec: $durationSec) {
+    id
+    wpm
+    cpm
+    accuracy
+    score
+    mistakes { error correction type }
+    suggestions
+    encouragement
+    createdAt
+  }
+}
+''';
+
+const String getTypingTestQuery = r'''
+  query GetTypingTests {
+    getTypingTests {
+      wpm
+      accuracy
+      score
+      createdAt
+    }
+  }
+''';

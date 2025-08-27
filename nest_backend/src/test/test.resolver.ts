@@ -20,7 +20,7 @@ export class TestResolver {
   }
 
   @Mutation(() => TypingTest)
-  async submitTYpingTest(
+  async submitTypingTest(
     @Args('referenceText') referenceText: string,
     @Args('userText') userText: string,
     @Args('durationSec') durationSec: number,
