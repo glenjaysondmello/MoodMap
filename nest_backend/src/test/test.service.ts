@@ -16,7 +16,7 @@ export class TestService {
   async generateTypingText(): Promise<string> {
     try {
       const response = await this.client.chat.completions.create({
-        model: 'llama3-8b-8192', // Or any model you prefer
+        model: 'llama3-8b-8192',
         messages: [
           {
             role: 'system',

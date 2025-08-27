@@ -3,8 +3,9 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:provider/provider.dart';
 import '../graphql/graphql_documents.dart';
 import '../provider/auth_provider.dart';
-import '../screens/log_mood_screen.dart';
-import '../screens/history_screen.dart';
+import './log_mood_screen.dart';
+import './history_screen.dart';
+import './typing_text_launcer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -150,6 +151,29 @@ class _HomePageState extends State<HomePage> {
                     _fetchTodayMood();
                   },
                   child: const Text('Open'),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            /// ✅ NEW: Typing Test Launcher
+            Card(
+              child: ListTile(
+                title: const Text('Typing Test'),
+                subtitle: const Text(
+                  '1-minute test, mistakes, WPM, CPM & score',
+                ),
+                trailing: OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TypingTestLauncherPage(),
+                      ),
+                    );
+                  },
+                  child: const Text('Start'),
                 ),
               ),
             ),
