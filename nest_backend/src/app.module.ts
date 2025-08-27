@@ -9,6 +9,8 @@ import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
 import { MoodModule } from './mood/mood.module';
 import { SentimentModule } from './sentiment/sentiment.module';
+import { TestModule } from './test/test.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { SentimentModule } from './sentiment/sentiment.module';
     AuthModule,
     MoodModule,
     SentimentModule,
+    TestModule,
+    PrismaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

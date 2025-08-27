@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SpeakingTest {
+  id            String   @id @default(cuid())
+  uid           String
+  referenceText String
+  transcript    String
+  scores        Json
+  mistakes      Json
+  suggestions   Json
+  encouragement String
+  createdAt     DateTime @default(now())
+}
+
+model TypingTest {
+  id            String   @id @default(cuid())
+  uid           String
+  referenceText String
+  userText      String
+  wpm           Float
+  cpm           Float
+  accuracy      Float
+  durationSec   Int
+  mistakes      Json
+  score         Float
+  suggestions   Json
+  encouragement String
+  createdAt     DateTime @default(now())
+}
