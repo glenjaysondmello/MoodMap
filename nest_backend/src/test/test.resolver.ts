@@ -13,6 +13,11 @@ interface GqlContext {
 export class TestResolver {
   constructor(private readonly testService: TestService) {}
 
+  @Query(() => String)
+  async getTypingTestText() {
+    return this.testService.generateTypingText();
+  }
+
   @Query(() => [TypingTest])
   async getTypingTests(@Context() context: GqlContext) {
     const userId = context.req.user.uid;
