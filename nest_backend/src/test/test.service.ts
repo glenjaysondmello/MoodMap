@@ -21,7 +21,7 @@ export class TestService {
           {
             role: 'system',
             content:
-              'You are a generator of random, interesting, and typographically diverse paragraphs for a typing test. Provide one single paragraph of about 20-30 words. Do not include any introductory text, titles, or quotes. Just the paragraph.',
+              'You are a curator of interesting scientific facts. Provide a single, fascinating fact as a paragraph of about 25-35 words, suitable for a typing test. Ensure it is a complete sentence with correct punctuation. Do not add any introductory text like "Did you know?". Just provide the fact.',
           },
           {
             role: 'user',
