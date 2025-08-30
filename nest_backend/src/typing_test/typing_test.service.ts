@@ -4,7 +4,7 @@ import { evaluateTypingTest } from 'src/utils/typing-metrics';
 import Groq from 'groq-sdk';
 
 @Injectable()
-export class TestService {
+export class TypingTestService {
   private client: Groq;
 
   constructor(private readonly prismaService: PrismaService) {

@@ -1,17 +1,17 @@
 import { Args, Query, Context, Resolver, Mutation } from '@nestjs/graphql';
-import { TestService } from './test.service';
+import { TypingTestService } from './typing_test.service';
 import { UseGuards } from '@nestjs/common';
 import { TypingTest } from './models/typing-test.model';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
-
 interface GqlContext {
   req: { user: { uid: string } };
 }
 
 @Resolver(() => TypingTest)
 @UseGuards(FirebaseAuthGuard)
-export class TestResolver {
-  constructor(private readonly testService: TestService) {}
+@Resolver()
+export class TypingTestResolver {
+  constructor(private readonly testService: TypingTestService) {}
 
   @Query(() => String)
   async getTypingTestText() {

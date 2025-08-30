@@ -11,6 +11,7 @@ import { MoodModule } from './mood/mood.module';
 import { SentimentModule } from './sentiment/sentiment.module';
 import { TestModule } from './test/test.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { TypingTestModule } from './typing_test/typing_test.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { PrismaModule } from './prisma/prisma.module';
     SentimentModule,
     TestModule,
     PrismaModule,
+    TypingTestModule,
   ],
   controllers: [AppController],
   providers: [AppService],
