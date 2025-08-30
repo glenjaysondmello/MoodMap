@@ -10,7 +10,7 @@ class DashboardSpeaking extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Speaking Dashboard")),
       body: Query(
-        options: QueryOptions(document: gql(getSpeakingTestsQuery)),
+        options: QueryOptions(document: gql(getSpeakingTestQuery)),
         builder: (result, {refetch, fetchMore}) {
           if (result.isLoading) {
             return const Center(child: CircularProgressIndicator());

@@ -9,14 +9,15 @@ import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
 import { MoodModule } from './mood/mood.module';
 import { SentimentModule } from './sentiment/sentiment.module';
-import { TestModule } from './test/test.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { TypingTestModule } from './typing_test/typing_test.module';
 import { SpeakingTestModule } from './speaking_test/speaking_test.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true
+    }),
     MongooseModule.forRoot(process.env.MONGO_URI || ''),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
@@ -27,7 +28,6 @@ import { SpeakingTestModule } from './speaking_test/speaking_test.module';
     AuthModule,
     MoodModule,
     SentimentModule,
-    TestModule,
     PrismaModule,
     TypingTestModule,
     SpeakingTestModule,

@@ -1,15 +1,31 @@
-import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_frontend/graphql/graphql_documents.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:http/http.dart' show MultipartFile;
+import 'package:http_parser/http_parser.dart';
+import '../../graphql/graphql_documents.dart';
+
+const themeColors = {
+  'backgroundStart': Color(0xFF2A2A72),
+  'backgroundEnd': Color(0xFF009FFD),
+  'card': Color(0x22FFFFFF),
+  'text': Colors.white,
+  'textFaded': Color(0xAAFFFFFF),
+  'correct': Color(0xFF39FF14),
+  'incorrect': Color(0xFFFF4081),
+  'accent': Color(0xFF00D2FF),
+  'recording': Colors.redAccent,
+};
 
 class SpeakingTestPage extends StatefulWidget {
   final String referenceText;
-
   const SpeakingTestPage({super.key, required this.referenceText});
 
   @override
@@ -17,9 +33,16 @@ class SpeakingTestPage extends StatefulWidget {
 }
 
 class _SpeakingTestPageState extends State<SpeakingTestPage> {
+  int _seconds = 60;
+  Timer? _timer;
+  bool _isRunning = false;
+
   FlutterSoundRecorder? _recorder;
-  bool isRecording = false;
-  String? audioPath;
+  bool _isRecording = false;
+  String? _audioPath;
+
+  bool _submitted = false;
+  Map<String, dynamic>? _result;
 
   @override
   void initState() {
@@ -27,123 +50,483 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
     _initRecorder();
   }
 
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _recorder?.closeRecorder();
+    super.dispose();
+  }
+
   Future<void> _initRecorder() async {
     _recorder = FlutterSoundRecorder();
+    final status = await Permission.microphone.request();
+    if (status != PermissionStatus.granted) {
+      throw RecordingPermissionException('Microphone permission not granted');
+    }
     await _recorder!.openRecorder();
-    await Permission.microphone.request();
+  }
+
+  void _startTimer() {
+    setState(() {
+      _isRunning = true;
+      _seconds = 60;
+    });
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_seconds <= 1) {
+        timer.cancel();
+        if (_isRecording) _stopRecordingAndSubmit();
+      } else {
+        setState(() => _seconds--);
+      }
+    });
   }
 
   Future<void> _startRecording() async {
     final dir = await getTemporaryDirectory();
-    audioPath = '${dir.path}/recorded.aac';
-    await _recorder!.startRecorder(toFile: audioPath);
-    setState(() {
-      isRecording = true;
-    });
+    // Record as M4A (AAC in MP4 container) – accepted by Groq
+    _audioPath =
+        '${dir.path}/recorded_speech_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    await _recorder!.startRecorder(
+      toFile: _audioPath,
+      codec: Codec.aacMP4, // IMPORTANT: produces .m4a
+    );
+    setState(() => _isRecording = true);
+    _startTimer();
   }
 
   Future<void> _stopRecording() async {
     await _recorder!.stopRecorder();
+    _timer?.cancel();
     setState(() {
-      isRecording = false;
+      _isRecording = false;
+      _isRunning = false;
     });
   }
 
-  Future<String> _audioToBase64() async {
-    final bytes = await File(audioPath!).readAsBytes();
-    return base64Encode(bytes);
+  Future<void> _stopRecordingAndSubmit() async {
+    await _stopRecording();
+    _submitTest();
   }
 
-  @override
-  void dispose() {
-    _recorder!.closeRecorder();
-    super.dispose();
+  void _resetTest() {
+    _timer?.cancel();
+    setState(() {
+      _seconds = 60;
+      _isRunning = false;
+      _submitted = false;
+      _result = null;
+      _isRecording = false;
+      _audioPath = null;
+    });
+  }
+
+  Future<void> _submitTest() async {
+    if (_submitted || _audioPath == null) return;
+
+    setState(() => _submitted = true);
+
+    final file = File(_audioPath!);
+    if (!await file.exists()) {
+      setState(() => _submitted = false);
+      debugPrint('Audio file not found: $_audioPath');
+      return;
+    }
+
+    final bytes = await file.readAsBytes();
+    final upload = MultipartFile.fromBytes(
+      'file', // variable name
+      bytes,
+      filename: _audioPath!.split('/').last,
+      contentType: MediaType('audio', 'm4a'), // or ('audio', 'mp4')
+    );
+
+    if (mounted) {
+      final client = GraphQLProvider.of(context).value;
+
+      // Make sure your mutation matches the server signature:
+      // mutation SubmitSpeakingTest($uid: String!, $referenceText: String!, $file: Upload!) { ... }
+      final result = await client.mutate(
+        MutationOptions(
+          document: gql(submitSpeakingTestMutation),
+          variables: {'referenceText': widget.referenceText, 'file': upload},
+        ),
+      );
+
+      if (result.hasException) {
+        debugPrint(result.exception.toString());
+        setState(() => _submitted = false);
+        return;
+      }
+
+      setState(() {
+        _result = result.data?['submitSpeakingTest'];
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Speaking Test")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Mutation(
-          options: MutationOptions(
-            document: gql(submitSpeakingTestMutation),
-            onCompleted: (dynamic resultData) {
-              if (resultData != null) {
-                final result = resultData['submitSpeakingTest'];
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => SpeakingResultPage(result: result),
-                  ),
-                );
-              }
-            },
+      body: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              themeColors['backgroundStart']!,
+              themeColors['backgroundEnd']!,
+            ],
           ),
-          builder: (runMutation, result) {
-            return Column(
-              children: [
-                Text("Read the following text aloud:"),
-                const SizedBox(height: 10),
-                Text(
-                  widget.referenceText,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        child: SafeArea(
+          child: _submitted && _result != null
+              ? _buildResultView()
+              : _buildTestView(),
+        ),
+      ),
+    );
+  }
+
+  // ----- UI below unchanged from your version -----
+
+  Widget _buildTestView() {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        children: [
+          _buildStatsBar(),
+          const SizedBox(height: 24),
+          Expanded(child: _buildReferenceTextView()),
+          const SizedBox(height: 24),
+          _buildActionBar(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultView() {
+    final results = _result!;
+    final scores = results['scores'] as Map<String, dynamic>;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: ListView(
+        children: [
+          Text(
+            "Your Results",
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: themeColors['text'],
+            ),
+          ).animate().fadeIn(delay: 100.ms).slideY(),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _StatCard(
+                icon: Icons.record_voice_over,
+                title: "Fluency",
+                value: (scores['fluency'] as num).toStringAsFixed(1),
+              ).animate().fadeIn(delay: 300.ms).slideX(),
+              _StatCard(
+                icon: Icons.rule,
+                title: "Grammar",
+                value: (scores['grammar'] as num).toStringAsFixed(1),
+              ).animate().fadeIn(delay: 400.ms).slideX(),
+              _StatCard(
+                icon: Icons.spellcheck,
+                title: "Pronunciation",
+                value: (scores['pronunciation'] as num).toStringAsFixed(1),
+              ).animate().fadeIn(delay: 500.ms).slideX(),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildOverallScoreGauge(
+            (scores['overall'] as num).toDouble(),
+          ).animate().fadeIn(delay: 600.ms).scale(),
+          const SizedBox(height: 20),
+          _ResultDetailCard(
+            title: "Your Transcript",
+            icon: Icons.text_fields,
+            children: [Text(results['transcript'])],
+          ).animate().fadeIn(delay: 700.ms),
+          const SizedBox(height: 12),
+          _ResultDetailCard(
+            title: "Mistakes",
+            icon: Icons.warning_amber_rounded,
+            children: (results['mistakes'] as List).map((m) {
+              return Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: "${m['error']} → ",
+                      style: TextStyle(color: themeColors['incorrect']!),
+                    ),
+                    TextSpan(
+                      text: m['correction'],
+                      style: TextStyle(color: themeColors['correct']!),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: isRecording ? _stopRecording : _startRecording,
-                  child: Text(
-                    isRecording ? "Stop Recording" : "Start Recording",
-                  ),
-                ),
-                const SizedBox(height: 20),
-                if (audioPath != null && !isRecording)
-                  ElevatedButton(
-                    onPressed: () async {
-                      final audioBase64 = await _audioToBase64();
-                      runMutation({
-                        "referenceText": widget.referenceText,
-                        "audioBase64": audioBase64,
-                      });
-                    },
-                    child: const Text("Submit Test"),
-                  ),
-              ],
-            );
-          },
+              );
+            }).toList(),
+          ).animate().fadeIn(delay: 800.ms),
+          const SizedBox(height: 12),
+          _ResultDetailCard(
+            title: "Suggestions",
+            icon: Icons.lightbulb_outline,
+            children: (results['suggestions'] as List)
+                .map((s) => Text("• $s"))
+                .toList(),
+          ).animate().fadeIn(delay: 900.ms),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.refresh),
+            label: const Text("Try Another Test"),
+            onPressed: _resetTest,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: themeColors['accent']!.withAlpha(204),
+              foregroundColor: Colors.white,
+            ),
+          ).animate().fadeIn(delay: 1000.ms),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsBar() =>
+      _LiveStat(label: "Time Left", value: "${_seconds}s", primary: true);
+
+  Widget _buildActionBar() {
+    if (_isRecording) {
+      return ElevatedButton.icon(
+        icon: const Icon(Icons.stop_circle_outlined),
+        label: const Text("Stop Recording"),
+        onPressed: _stopRecording,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: themeColors['recording'],
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+        ),
+      );
+    }
+    if (!_isRecording && _audioPath != null) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: Icon(
+              Icons.refresh,
+              color: themeColors['textFaded'],
+              size: 28,
+            ),
+            onPressed: _resetTest,
+          ),
+          const SizedBox(width: 40),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.send),
+            label: const Text("Submit"),
+            onPressed: _submitTest,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: themeColors['accent']!.withAlpha(204),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+            ),
+          ),
+        ],
+      );
+    }
+    return ElevatedButton.icon(
+      icon: const Icon(Icons.mic),
+      label: const Text("Start Recording"),
+      onPressed: _startRecording,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: themeColors['accent']!.withAlpha(204),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+      ),
+    );
+  }
+
+  Widget _buildReferenceTextView() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: themeColors['card'],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: SingleChildScrollView(
+          child: Text(
+            widget.referenceText,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              color: themeColors['text'],
+              height: 1.5,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOverallScoreGauge(double score) {
+    return CircularPercentIndicator(
+      radius: 80.0,
+      lineWidth: 12.0,
+      percent: score / 100,
+      center: Text(
+        score.toStringAsFixed(1),
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.bold,
+          fontSize: 32,
+          color: themeColors['text'],
+        ),
+      ),
+      progressColor: themeColors['correct'],
+      backgroundColor: themeColors['card']!,
+      circularStrokeCap: CircularStrokeCap.round,
+      header: Padding(
+        padding: const EdgeInsets.only(bottom: 12.0),
+        child: Text(
+          "Overall Score",
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            color: themeColors['text'],
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
   }
 }
 
-class SpeakingResultPage extends StatelessWidget {
-  final Map<String, dynamic>? result;
-  const SpeakingResultPage({super.key, this.result});
+class _LiveStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool primary;
+  const _LiveStat({
+    required this.label,
+    required this.value,
+    this.primary = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final scores = result!['scores'];
+    return Column(
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            color: themeColors['textFaded'],
+            fontSize: 12,
+          ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            color: primary ? themeColors['accent'] : themeColors['text'],
+            fontSize: primary ? 28 : 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+}
 
-    return Scaffold(
-      appBar: AppBar(title: const Text("Result")),
-      body: Padding(
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  const _StatCard({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, color: themeColors['accent'], size: 28),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            color: themeColors['text'],
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            color: themeColors['textFaded'],
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ResultDetailCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final List<Widget> children;
+  const _ResultDetailCard({
+    required this.title,
+    required this.icon,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: themeColors['card'],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: ListView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Transcript: ${result!['transcript']}"),
-            const SizedBox(height: 10),
-            Text("Fluency: ${scores['fluency']}"),
-            Text("Pronunciation: ${scores['pronunciation']}"),
-            Text("Grammar: ${scores['grammar']}"),
-            Text("Vocabulary: ${scores['vocabulary']}"),
-            Text("Overall: ${scores['overall']}"),
-            const SizedBox(height: 10),
-            Text("Encouragement: ${result!['encouragement']}"),
-            const SizedBox(height: 10),
-            Text("Mistakes: ${result!['mistakes']}"),
-            Text("Suggestions: ${result!['suggestions']}"),
+            Row(
+              children: [
+                Icon(icon, color: themeColors['accent']),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: themeColors['text'],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(color: Colors.white24, height: 20),
+            if (children.isEmpty)
+              Text("None!", style: TextStyle(color: themeColors['textFaded']))
+            else
+              ...children.map(
+                (child) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4.0),
+                  child: DefaultTextStyle(
+                    style: GoogleFonts.poppins(
+                      color: themeColors['text'],
+                      fontSize: 15,
+                    ),
+                    child: child,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

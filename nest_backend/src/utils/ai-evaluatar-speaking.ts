@@ -1,5 +1,4 @@
 import Groq from 'groq-sdk';
-import { SpeakingTest } from '../speaking_test/models/speaking-test.model';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -26,13 +25,31 @@ export const evaluateWithGroq = async (payload: {
   referenceText: string;
   transcript: string;
 }): Promise<AiEvaluationResult> => {
+  if (!payload.transcript) {
+    return {
+      scores: {
+        fluency: 0,
+        pronunciation: 0,
+        grammar: 0,
+        vocabulary: 0,
+        overall: 0,
+      },
+      mistakes: [],
+      suggestions: [
+        'No transcript detected. Please retry the test with clear audio.',
+      ],
+      encouragement:
+        'Don’t worry, try again! Clear speech will help the system transcribe better.',
+    };
+  }
+
   const response = await groq.chat.completions.create({
     model: 'llama3-70b-8192',
     messages: [
       {
         role: 'system',
         content:
-          'You are a strict but fair English evaluation expert. Your task is to analyze a user\'s speech transcript by comparing it to a reference text. You MUST return a JSON object with the exact structure: { "scores": { "fluency": number, "pronunciation": number, "grammar": number, "vocabulary": number, "overall": number }, "mistakes": [{ "error": string, "correction": string, "type": string }], "suggestions": [string], "encouragement": string }. All scores must be integers from 0 to 100. The "mistakes" array should detail every deviation. The "type" can be "Pronunciation", "Grammar", "Omission", "Insertion", or "Word Choice". If there are no mistakes, return an empty array. Provide actionable suggestions for improvement.',
+          'You are a strict but fair English evaluation expert. Your task is to analyze a user\'s speech transcript by comparing it to a reference text. You MUST return a JSON object with the exact structure: { "score": { "fluency": number, "pronunciation": number, "grammar": number, "vocabulary": number, "overall": number }, "mistakes": [{ "error": string, "correction": string, "type": string }], "suggestions": [string], "encouragement": string }. All scores must be integers from 0 to 100. The "mistakes" array should detail every deviation. The "type" can be "Pronunciation", "Grammar", "Omission", "Insertion", or "Word Choice". If there are no mistakes, return an empty array. Provide actionable suggestions for improvement.',
       },
       {
         role: 'user',
@@ -48,5 +65,21 @@ export const evaluateWithGroq = async (payload: {
     throw new Error('Failed to get a valid response from Groq API.');
   }
 
-  return JSON.parse(content);
+  let parsed: AiEvaluationResult;
+
+  try {
+    parsed = JSON.parse(content);
+  } catch (error) {
+    console.error('Invalid JSON from Groq:', content);
+    throw new Error('Groq returned invalid JSON format.');
+  }
+
+  parsed.scores = Object.fromEntries(
+    Object.entries(parsed.scores).map(([k, v]) => [
+      k,
+      Math.max(0, Math.min(100, Number(v))),
+    ]),
+  ) as AiEvaluationResult['scores'];
+
+  return parsed;
 };

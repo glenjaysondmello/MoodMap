@@ -27,9 +27,7 @@ class HomePage extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
-    // The sign-out logic remains the same
     Future<void> signOut() async {
-      // Use a mounted check for safety in async gaps
       if (!context.mounted) return;
       await authProvider.signOut();
       if (context.mounted) {
@@ -38,13 +36,11 @@ class HomePage extends StatelessWidget {
     }
 
     return Scaffold(
-      // 1. A transparent AppBar to blend with the gradient
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Row(
           children: [
-            // A subtle border around the avatar to make it pop
             Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -64,7 +60,6 @@ class HomePage extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            // Use a flexible to prevent overflow if the name is long
             Flexible(
               child: Text(
                 user?.displayName ?? 'Guest',
@@ -88,7 +83,6 @@ class HomePage extends StatelessWidget {
         ],
       ),
       extendBodyBehindAppBar: true,
-      // 2. The consistent gradient background
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -103,94 +97,93 @@ class HomePage extends StatelessWidget {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-                // 3. A prominent, welcoming header
-                Text(
-                  'Welcome back,',
-                  style: GoogleFonts.poppins(
-                    fontSize: 28,
-                    color: themeColors['textFaded'],
-                  ),
-                ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
-                Text(
-                  user?.displayName ?? 'Guest',
-                  style: GoogleFonts.poppins(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: themeColors['text'],
-                    height: 1.2,
-                  ),
-                ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2),
-
-                const Spacer(flex: 1),
-
-                // 4. A large, primary action card for the Typing Test
-                _ActionCard(
-                  icon: Icons.keyboard_alt_outlined,
-                  title: 'Typing Test',
-                  subtitle: 'Challenge yourself and measure your speed.',
-                  buttonText: 'Start Now',
-                  isPrimary: true,
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const TypingTestLauncherPage(),
+            // 1. Wrapped the Column in a SingleChildScrollView to prevent overflows.
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  // A prominent, welcoming header
+                  Text(
+                    'Welcome back,',
+                    style: GoogleFonts.poppins(
+                      fontSize: 28,
+                      color: themeColors['textFaded'],
                     ),
-                  ),
-                ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.3),
-
-                const SizedBox(height: 20),
-
-                // 5. A secondary action card for the Dashboard
-                _ActionCard(
-                  icon: Icons.dashboard_outlined,
-                  title: 'Dashboard (Typing)',
-                  subtitle: 'Analyze your performance and progress.',
-                  buttonText: 'View Stats',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const DashboardTyping()),
-                  ),
-                ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.3),
-
-                const Spacer(flex: 2),
-
-                const SizedBox(height: 20),
-
-                _ActionCard(
-                  icon: Icons.keyboard_alt_outlined,
-                  title: 'Speaking Test',
-                  subtitle: 'Challenge yourself and measure your speed.',
-                  buttonText: 'Start Now',
-                  isPrimary: true,
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const SpeakingTestLauncherPage(),
+                  ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
+                  Text(
+                    user?.displayName ?? 'Guest',
+                    style: GoogleFonts.poppins(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: themeColors['text'],
+                      height: 1.2,
                     ),
-                  ),
-                ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.3),
+                  ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2),
 
-                const SizedBox(height: 20),
+                  // 2. Replaced Spacers with SizedBoxes for explicit spacing in a scroll view.
+                  const SizedBox(height: 30),
 
-                _ActionCard(
-                  icon: Icons.dashboard_outlined,
-                  title: 'Dashboard (Speaking)',
-                  subtitle: 'Analyze your performance and progress.',
-                  buttonText: 'View Stats',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const DashboardSpeaking(),
+                  // Typing Test Section
+                  _ActionCard(
+                    icon: Icons.keyboard_alt_outlined,
+                    title: 'Typing Test',
+                    subtitle: 'Challenge yourself and measure your speed.',
+                    buttonText: 'Start Now',
+                    isPrimary: true,
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TypingTestLauncherPage(),
+                      ),
                     ),
-                  ),
-                ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.3),
+                  ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.3),
+                  const SizedBox(height: 20),
+                  _ActionCard(
+                    icon: Icons.dashboard_outlined,
+                    title: 'Dashboard (Typing)',
+                    subtitle: 'Analyze your performance and progress.',
+                    buttonText: 'View Stats',
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const DashboardTyping(),
+                      ),
+                    ),
+                  ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.3),
 
-                const Spacer(flex: 2),
-              ],
+                  const SizedBox(height: 40), // Spacing between sections
+                  // Speaking Test Section
+                  _ActionCard(
+                    icon: Icons.mic_none_outlined,
+                    title: 'Speaking Test',
+                    subtitle: 'Test your pronunciation and fluency.',
+                    buttonText: 'Start Now',
+                    isPrimary: true,
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SpeakingTestLauncherPage(),
+                      ),
+                    ),
+                  ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.3),
+                  const SizedBox(height: 20),
+                  _ActionCard(
+                    icon: Icons.dashboard_outlined,
+                    title: 'Dashboard (Speaking)',
+                    subtitle: 'Review your scores and suggestions.',
+                    buttonText: 'View Stats',
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const DashboardSpeaking(),
+                      ),
+                    ),
+                  ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.3),
+
+                  const SizedBox(height: 20), // Bottom padding
+                ],
+              ),
             ),
           ),
         ),

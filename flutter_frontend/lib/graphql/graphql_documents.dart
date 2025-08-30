@@ -108,8 +108,8 @@ const String generateTypingTestTextQuery = r'''
 // speaking
 
 const String submitSpeakingTestMutation = r'''
-mutation SubmitSpeakingTest($uid: String!, $referenceText: String!, $audioBase64: String!) {
-  submitSpeakingTest(uid: $uid, referenceText: $referenceText, audioBase64: $audioBase64) {
+mutation SubmitSpeakingTest($referenceText: String!, $audioBase64: String!) {
+  submitSpeakingTest(referenceText: $referenceText, audioBase64: $audioBase64) {
     id
     transcript
     scores {
@@ -130,8 +130,8 @@ mutation SubmitSpeakingTest($uid: String!, $referenceText: String!, $audioBase64
 }
 ''';
 
-const String getSpeakingTestsQuery = r'''
-query GetSpeakingTests($uid: String!) {
+const String getSpeakingTestQuery = r'''
+query GetSpeakingTests() {
   getSpeakingTests() {
     id
     transcript

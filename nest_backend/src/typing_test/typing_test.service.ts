@@ -21,7 +21,7 @@ export class TypingTestService {
           {
             role: 'system',
             content:
-              'You are a curator of interesting scientific facts. Provide a single, fascinating fact as a paragraph of about 25-35 words, suitable for a typing test. Ensure it is a complete sentence with correct punctuation. Do not add any introductory text like "Did you know?". Just provide the fact.',
+              "You are a curator of interesting and accessible scientific knowledge. Your task is to generate a unique, fascinating scientific fact, presented as a cohesive paragraph. The paragraph must be approximately 150 words, making it suitable for a 60-second speaking assessment for an English professional. Use clear, intermediate-level vocabulary and varied sentence structures, ensuring the topic is easily understandable without requiring specialized knowledge. Present only the fact itself as a complete paragraph with correct punctuation. Do not include any introductory phrases like 'Here is a fascinating fact' or conversational filler.",
           },
           {
             role: 'user',
