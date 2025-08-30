@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_frontend/graphql/graphql_documents.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -62,7 +62,59 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      appBar: AppBar(title: const Text("Speaking Test")),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Mutation(
+          options: MutationOptions(
+            document: gql(submitSpeakingTestMutation),
+            onCompleted: (dynamic resultData) {
+              if (resultData != null) {
+                final result = resultData['submitSpeakingTest'];
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SpeakingResultPage(result: result),
+                  ),
+                );
+              }
+            },
+          ),
+          builder: (runMutation, result) {
+            return Column(
+              children: [
+                Text("Read the following text aloud:"),
+                const SizedBox(height: 10),
+                Text(
+                  widget.referenceText,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: isRecording ? _stopRecording : _startRecording,
+                  child: Text(
+                    isRecording ? "Stop Recording" : "Start Recording",
+                  ),
+                ),
+                const SizedBox(height: 20),
+                if (audioPath != null && !isRecording)
+                  ElevatedButton(
+                    onPressed: () async {
+                      final audioBase64 = await _audioToBase64();
+                      runMutation({
+                        "referenceText": widget.referenceText,
+                        "audioBase64": audioBase64,
+                      });
+                    },
+                    child: const Text("Submit Test"),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 
@@ -88,10 +140,10 @@ class SpeakingResultPage extends StatelessWidget {
             Text("Vocabulary: ${scores['vocabulary']}"),
             Text("Overall: ${scores['overall']}"),
             const SizedBox(height: 10),
-            Text("Encouragement: ${result['encouragement']}"),
+            Text("Encouragement: ${result!['encouragement']}"),
             const SizedBox(height: 10),
-            Text("Mistakes: ${result['mistakes']}"),
-            Text("Suggestions: ${result['suggestions']}"),
+            Text("Mistakes: ${result!['mistakes']}"),
+            Text("Suggestions: ${result!['suggestions']}"),
           ],
         ),
       ),

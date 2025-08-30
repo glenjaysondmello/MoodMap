@@ -6,6 +6,7 @@ import '../provider/auth_provider.dart';
 import 'typing/typing_text_launcer.dart';
 import 'typing/dashboard_page.dart';
 import 'speaking/dashboard_page.dart';
+import 'speaking/speaking_text_launcer.dart';
 
 // Using the same theme colors for consistency
 const themeColors = {
@@ -156,6 +157,22 @@ class HomePage extends StatelessWidget {
                 ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.3),
 
                 const Spacer(flex: 2),
+
+                const SizedBox(height: 20),
+
+                _ActionCard(
+                  icon: Icons.keyboard_alt_outlined,
+                  title: 'Speaking Test',
+                  subtitle: 'Challenge yourself and measure your speed.',
+                  buttonText: 'Start Now',
+                  isPrimary: true,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SpeakingTestLauncherPage(),
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.3),
 
                 const SizedBox(height: 20),
 

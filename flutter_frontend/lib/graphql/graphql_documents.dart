@@ -146,3 +146,9 @@ query GetSpeakingTests($uid: String!) {
   }
 }
 ''';
+
+const String generateSpeakingTestTextQuery = r'''
+  query GetSpeakingTestText {
+    getSpeakingTestText
+  }
+''';
