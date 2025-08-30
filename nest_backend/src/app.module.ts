@@ -12,6 +12,7 @@ import { SentimentModule } from './sentiment/sentiment.module';
 import { TestModule } from './test/test.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { TypingTestModule } from './typing_test/typing_test.module';
+import { SpeakingTestModule } from './speaking_test/speaking_test.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { TypingTestModule } from './typing_test/typing_test.module';
     TestModule,
     PrismaModule,
     TypingTestModule,
+    SpeakingTestModule,
   ],
   controllers: [AppController],
   providers: [AppService],

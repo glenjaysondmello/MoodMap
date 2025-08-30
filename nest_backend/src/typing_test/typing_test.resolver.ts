@@ -3,6 +3,7 @@ import { TypingTestService } from './typing_test.service';
 import { UseGuards } from '@nestjs/common';
 import { TypingTest } from './models/typing-test.model';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
+
 interface GqlContext {
   req: { user: { uid: string } };
 }
