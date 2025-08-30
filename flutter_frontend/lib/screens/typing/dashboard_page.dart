@@ -22,8 +22,8 @@ const themeColors = {
   'scoreLine': Color(0xFFFFD700),
 };
 
-class DashboardPage extends StatelessWidget {
-  const DashboardPage({super.key});
+class DashboardTyping extends StatelessWidget {
+  const DashboardTyping({super.key});
 
   @override
   Widget build(BuildContext context) {

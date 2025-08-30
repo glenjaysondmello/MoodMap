@@ -104,3 +104,45 @@ const String generateTypingTestTextQuery = r'''
     getTypingTestText
   }
 ''';
+
+// speaking
+
+const String submitSpeakingTestMutation = r'''
+mutation SubmitSpeakingTest($uid: String!, $referenceText: String!, $audioBase64: String!) {
+  submitSpeakingTest(uid: $uid, referenceText: $referenceText, audioBase64: $audioBase64) {
+    id
+    transcript
+    scores {
+      fluency
+      pronunciation
+      grammar
+      vocabulary
+      overall
+    }
+    encouragement
+    mistakes {
+      error
+      correction
+      type
+    }
+    suggestions
+  }
+}
+''';
+
+const String getSpeakingTestsQuery = r'''
+query GetSpeakingTests($uid: String!) {
+  getSpeakingTests() {
+    id
+    transcript
+    createdAt
+    scores {
+      fluency
+      pronunciation
+      grammar
+      vocabulary
+      overall
+    }
+  }
+}
+''';

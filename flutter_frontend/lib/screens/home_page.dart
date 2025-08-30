@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../provider/auth_provider.dart';
 import 'typing/typing_text_launcer.dart';
 import 'typing/dashboard_page.dart';
+import 'speaking/dashboard_page.dart';
 
 // Using the same theme colors for consistency
 const themeColors = {
@@ -145,12 +146,29 @@ class HomePage extends StatelessWidget {
                 // 5. A secondary action card for the Dashboard
                 _ActionCard(
                   icon: Icons.dashboard_outlined,
-                  title: 'Dashboard',
+                  title: 'Dashboard (Typing)',
                   subtitle: 'Analyze your performance and progress.',
                   buttonText: 'View Stats',
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const DashboardPage()),
+                    MaterialPageRoute(builder: (_) => const DashboardTyping()),
+                  ),
+                ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.3),
+
+                const Spacer(flex: 2),
+
+                const SizedBox(height: 20),
+
+                _ActionCard(
+                  icon: Icons.dashboard_outlined,
+                  title: 'Dashboard (Speaking)',
+                  subtitle: 'Analyze your performance and progress.',
+                  buttonText: 'View Stats',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const DashboardSpeaking(),
+                    ),
                   ),
                 ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.3),
 
