@@ -75,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
                       // 3. A branded title and tagline that animate in
                       Text(
-                        'TypeMaster',
+                        'FluentEdge',
                         style: GoogleFonts.poppins(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,

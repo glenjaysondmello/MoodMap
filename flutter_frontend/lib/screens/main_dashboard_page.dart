@@ -30,17 +30,22 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _isLoading = true;
   String? _error;
   Map<String, dynamic> _overallStats = {};
-  List<dynamic> _recentActivities = [];
+  List<Map<String, dynamic>> _recentActivities = [];
+  bool _didFetchData = false; // Flag to prevent multiple fetches
 
   @override
-  void initState() {
-    super.initState();
-    // Fetch all data when the widget is first created
-    _fetchDashboardData();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Fetch data here, ensuring it only runs once.
+    if (!_didFetchData) {
+      _didFetchData = true;
+      _fetchDashboardData();
+    }
   }
 
   /// Fetches speaking and typing tests concurrently and processes them.
   Future<void> _fetchDashboardData() async {
+    // We can now safely access the context here.
     final client = GraphQLProvider.of(context).value;
 
     try {
@@ -60,6 +65,9 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ]);
 
+      // Check if the widget is still in the tree before calling setState.
+      if (!mounted) return;
+
       final speakingResult = results[0];
       final typingResult = results[1];
 
@@ -67,8 +75,17 @@ class _DashboardPageState extends State<DashboardPage> {
         throw Exception("Error fetching data. Please try again.");
       }
 
-      final speakingTests = speakingResult.data?['getSpeakingTests'] ?? [];
-      final typingTests = typingResult.data?['getTypingTests'] ?? [];
+      final List<dynamic> speakingData =
+          speakingResult.data?['getSpeakingTests'] ?? [];
+      final speakingTests = speakingData
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
+
+      final List<dynamic> typingData =
+          typingResult.data?['getTypingTests'] ?? [];
+      final typingTests = typingData
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
 
       setState(() {
         _overallStats = _calculateOverallStats(speakingTests, typingTests);
@@ -76,6 +93,7 @@ class _DashboardPageState extends State<DashboardPage> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -85,8 +103,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
   /// Calculates aggregate statistics from all test results.
   Map<String, dynamic> _calculateOverallStats(
-    List<dynamic> speakingTests,
-    List<dynamic> typingTests,
+    List<Map<String, dynamic>> speakingTests,
+    List<Map<String, dynamic>> typingTests,
   ) {
     // Calculate average speaking score
     final double avgSpeakingScore = speakingTests.isNotEmpty
@@ -123,9 +141,9 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   /// Merges, sorts, and truncates test results for a unified activity feed.
-  List<dynamic> _getRecentActivities(
-    List<dynamic> speakingTests,
-    List<dynamic> typingTests,
+  List<Map<String, dynamic>> _getRecentActivities(
+    List<Map<String, dynamic>> speakingTests,
+    List<Map<String, dynamic>> typingTests,
   ) {
     // Add a 'type' field to each test to identify it later
     final combined = [
@@ -299,7 +317,8 @@ class _OverallStatsGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
-      childAspectRatio: 1.8,
+      // FIX: Changed from 1.8 to 1.6 to give cards more vertical space.
+      childAspectRatio: 1.6,
       children: [
         _StatCard(
           icon: Icons.mic,
@@ -345,7 +364,8 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      // FIX: Reduced padding from 12 to 8 to save space.
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: themeColors['card'],
         borderRadius: BorderRadius.circular(16),
@@ -353,9 +373,9 @@ class _StatCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Icon(icon, color: color, size: 24),
+          const Spacer(), // Fills available space flexibly
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -363,7 +383,8 @@ class _StatCard extends StatelessWidget {
                 value,
                 style: GoogleFonts.poppins(
                   color: Colors.white,
-                  fontSize: 20,
+                  // FIX: Reduced font size from 20 to 18.
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -431,6 +452,7 @@ class _RecentActivityCard extends StatelessWidget {
           Text(
             isSpeaking
                 ? 'Score: ${(test['scores']['overall'] as num).toStringAsFixed(1)}'
+                // FIX: Changed 'score' to 'wpm' to match the label and data
                 : 'WPM: ${(test['wpm'] as num).toStringAsFixed(1)}',
             style: GoogleFonts.poppins(
               color: Colors.white,

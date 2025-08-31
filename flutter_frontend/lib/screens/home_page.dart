@@ -1,6 +1,7 @@
 import 'dart:ui'; // Needed for ImageFilter
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import './main_dashboard_page.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../provider/auth_provider.dart';
@@ -147,6 +148,23 @@ class AppDrawer extends StatelessWidget {
                 child: Column(
                   children: [
                     const SizedBox(height: 10),
+
+                    _buildDrawerItem(
+                      icon: Icons.dashboard_rounded,
+                      title: 'Dashboard',
+                      onTap: () {
+                        Navigator.pop(context); // Close the drawer
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const DashboardPage(),
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 20),
+
                     // 2. Nicely styled navigation items
                     _buildDrawerItem(
                       icon: Icons.keyboard_alt_outlined,
