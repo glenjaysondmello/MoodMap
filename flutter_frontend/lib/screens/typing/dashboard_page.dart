@@ -72,10 +72,17 @@ class DashboardTyping extends StatelessWidget {
                 );
               }
               if (result.hasException) {
-                return Center(
-                  child: Text(
-                    "Error: ${result.exception}",
-                    style: TextStyle(color: themeColors['text']),
+                // Also allow pull-to-refresh on the error screen
+                return RefreshIndicator(
+                  onRefresh: refetch!,
+                  child: ListView(
+                    // ListView makes RefreshIndicator work
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.7,
+                        child: _buildErrorState(onRetry: refetch),
+                      ),
+                    ],
                   ),
                 );
               }
@@ -197,6 +204,53 @@ class DashboardTyping extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // For displaying a user-friendly error message
+  Widget _buildErrorState({required VoidCallback onRetry}) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.cloud_off_rounded,
+            size: 80,
+            color: themeColors['textFaded'],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "Something Went Wrong",
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: themeColors['text'],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Please check your network connection and try again.",
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              color: themeColors['textFaded'],
+            ),
+          ),
+          const SizedBox(height: 24),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.refresh),
+            label: const Text("Retry"),
+            onPressed: onRetry,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: themeColors['text'],
+              side: BorderSide(color: themeColors['textFaded']!),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30.0),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 500.ms);
   }
 
   Widget _buildEmptyState() {

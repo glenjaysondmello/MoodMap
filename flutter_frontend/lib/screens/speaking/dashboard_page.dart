@@ -70,10 +70,17 @@ class DashboardSpeaking extends StatelessWidget {
                 );
               }
               if (result.hasException) {
-                return Center(
-                  child: Text(
-                    "Error: ${result.exception}",
-                    style: TextStyle(color: themeColors['text']),
+                // Also allow pull-to-refresh on the error screen
+                return RefreshIndicator(
+                  onRefresh: refetch!,
+                  child: ListView(
+                    // ListView makes RefreshIndicator work
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.7,
+                        child: _buildErrorState(onRetry: refetch),
+                      ),
+                    ],
                   ),
                 );
               }
@@ -82,7 +89,6 @@ class DashboardSpeaking extends StatelessWidget {
               final tests = List.from(testsRaw);
 
               if (tests.isEmpty) {
-                // Wrap empty state in RefreshIndicator for pull-to-refresh
                 return RefreshIndicator(
                   onRefresh: refetch!,
                   child: ListView(
@@ -97,20 +103,6 @@ class DashboardSpeaking extends StatelessWidget {
               }
 
               // Data Processing for chart
-              // tests.sort((a, b) {
-              //   final dateA =
-              //       DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime(1970);
-              //   final dateB =
-              //       DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime(1970);
-              //   return dateA.compareTo(dateB);
-              // });
-
-              // final latestTest = tests.last;
-              // final latestDate = DateTime.tryParse(
-              //   latestTest['createdAt'] ?? '',
-              // );
-
-              // Compute averages for all tests
               Map<String, double> averageScores = {
                 'fluency': 0,
                 'pronunciation': 0,
@@ -136,14 +128,6 @@ class DashboardSpeaking extends StatelessWidget {
               String avgScore(String key) =>
                   averageScores[key]?.toStringAsFixed(1) ?? "0.0";
 
-              // String safeScore(Map scores, String key) {
-              //   final val = scores?[key];
-              //   if (val is num) {
-              //     return val.toStringAsFixed(1);
-              //   }
-              //   return "0.0";
-              // }
-
               return RefreshIndicator(
                 onRefresh: refetch!,
                 child: ListView(
@@ -157,17 +141,7 @@ class DashboardSpeaking extends StatelessWidget {
                         color: themeColors['text'],
                       ),
                     ).animate().fadeIn(duration: 400.ms).slideX(),
-                    // if (latestDate != null)
-                    //   Text(
-                    //     "Taken on ${DateFormat.yMMMd().format(latestDate)}",
-                    //     style: GoogleFonts.poppins(
-                    //       fontSize: 14,
-                    //       color: themeColors['textFaded'],
-                    //     ),
-                    //   ),
                     const SizedBox(height: 16),
-
-                    // Summary Stat Cards for the AVERAGE of all tests
                     GridView.count(
                       crossAxisCount: 2,
                       shrinkWrap: true,
@@ -194,10 +168,7 @@ class DashboardSpeaking extends StatelessWidget {
                         ),
                       ],
                     ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
-
                     const SizedBox(height: 24),
-
-                    // Main Chart for Overall Score
                     _ChartCard(
                       title: "Overall Score Over Time",
                       child: _buildLineChart(
@@ -214,6 +185,53 @@ class DashboardSpeaking extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // For displaying a user-friendly error message
+  Widget _buildErrorState({required VoidCallback onRetry}) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.cloud_off_rounded,
+            size: 80,
+            color: themeColors['textFaded'],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "Something Went Wrong",
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: themeColors['text'],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Please check your network connection and try again.",
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              color: themeColors['textFaded'],
+            ),
+          ),
+          const SizedBox(height: 24),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.refresh),
+            label: const Text("Retry"),
+            onPressed: onRetry,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: themeColors['text'],
+              side: BorderSide(color: themeColors['textFaded']!),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30.0),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 500.ms);
   }
 
   Widget _buildEmptyState() {
@@ -245,12 +263,12 @@ class DashboardSpeaking extends StatelessWidget {
     ).animate().fadeIn(duration: 500.ms);
   }
 
-  /// Builds a beautifully styled LineChart.
   Widget _buildLineChart(
     List tests,
     num Function(dynamic) getValue,
     Color lineColor,
   ) {
+    // ... (rest of the code remains unchanged)
     final spots = tests.asMap().entries.map((entry) {
       final index = entry.key;
       final test = entry.value;
@@ -335,9 +353,9 @@ class DashboardSpeaking extends StatelessWidget {
   }
 }
 
-// Helper Widgets
-
+// Helper Widgets (unchanged)
 class _SummaryStatCard extends StatelessWidget {
+  // ...
   final String label;
   final String value;
   const _SummaryStatCard({required this.label, required this.value});
@@ -376,6 +394,7 @@ class _SummaryStatCard extends StatelessWidget {
 }
 
 class _ChartCard extends StatelessWidget {
+  // ...
   final String title;
   final Widget child;
   const _ChartCard({required this.title, required this.child});
@@ -408,3 +427,36 @@ class _ChartCard extends StatelessWidget {
     );
   }
 }
+
+
+
+// Data Processing for chart
+              // tests.sort((a, b) {
+              //   final dateA =
+              //       DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime(1970);
+              //   final dateB =
+              //       DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime(1970);
+              //   return dateA.compareTo(dateB);
+              // });
+
+              // final latestTest = tests.last;
+              // final latestDate = DateTime.tryParse(
+              //   latestTest['createdAt'] ?? '',
+              // );
+
+              // String safeScore(Map scores, String key) {
+              //   final val = scores?[key];
+              //   if (val is num) {
+              //     return val.toStringAsFixed(1);
+              //   }
+              //   return "0.0";
+              // }
+
+              // if (latestDate != null)
+                    //   Text(
+                    //     "Taken on ${DateFormat.yMMMd().format(latestDate)}",
+                    //     style: GoogleFonts.poppins(
+                    //       fontSize: 14,
+                    //       color: themeColors['textFaded'],
+                    //     ),
+                    //   ),
