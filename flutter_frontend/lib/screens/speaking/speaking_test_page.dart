@@ -1,3 +1,4 @@
+// lib/pages/speaking_test_page.dart
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -42,6 +43,7 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
   String? _audioPath;
 
   bool _submitted = false;
+  bool _isSubmitting = false;
   Map<String, dynamic>? _result;
 
   @override
@@ -53,17 +55,47 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
   @override
   void dispose() {
     _timer?.cancel();
-    _recorder?.closeRecorder();
+    _closeRecorderSafely();
     super.dispose();
+  }
+
+  Future<void> _closeRecorderSafely() async {
+    try {
+      if (_recorder != null) {
+        // check if recorder is open; closeRecorder is safe to call but we null afterward
+        await _recorder!.closeRecorder();
+      }
+    } catch (e) {
+      debugPrint('Error closing recorder: $e');
+    } finally {
+      _recorder = null;
+    }
   }
 
   Future<void> _initRecorder() async {
     _recorder = FlutterSoundRecorder();
-    final status = await Permission.microphone.request();
-    if (status != PermissionStatus.granted) {
-      throw RecordingPermissionException('Microphone permission not granted');
+    try {
+      final status = await Permission.microphone.request();
+      if (status != PermissionStatus.granted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Microphone permission not granted.")),
+          );
+        }
+        // leave recorder uninitialized so startRecording will fail gracefully
+        return;
+      }
+      await _recorder!.openRecorder();
+    } catch (e) {
+      debugPrint('Recorder init error: $e');
+      // If openRecorder fails, close and null it.
+      await _closeRecorderSafely();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to initialize recorder.")),
+        );
+      }
     }
-    await _recorder!.openRecorder();
   }
 
   void _startTimer() {
@@ -72,44 +104,75 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
       _seconds = 60;
     });
 
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_seconds <= 1) {
         timer.cancel();
         if (_isRecording) _stopRecordingAndSubmit();
       } else {
+        if (!mounted) return;
         setState(() => _seconds--);
       }
     });
   }
 
   Future<void> _startRecording() async {
-    final dir = await getTemporaryDirectory();
-    // Record as M4A (AAC in MP4 container) – accepted by Groq
-    _audioPath =
-        '${dir.path}/recorded_speech_${DateTime.now().millisecondsSinceEpoch}.m4a';
-    await _recorder!.startRecorder(
-      toFile: _audioPath,
-      codec: Codec.aacMP4, // IMPORTANT: produces .m4a
-    );
-    setState(() => _isRecording = true);
-    _startTimer();
+    if (_isRecording) return;
+    if (_recorder == null) {
+      // Try to init once more
+      await _initRecorder();
+      if (_recorder == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Recorder not available.')),
+          );
+        }
+
+        return;
+      }
+    }
+
+    try {
+      final dir = await getTemporaryDirectory();
+      _audioPath =
+          '${dir.path}/recorded_speech_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await _recorder!.startRecorder(toFile: _audioPath, codec: Codec.aacMP4);
+      setState(() => _isRecording = true);
+      _startTimer();
+    } catch (e) {
+      debugPrint('Start recording failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to start recording.')),
+        );
+      }
+    }
   }
 
   Future<void> _stopRecording() async {
-    await _recorder!.stopRecorder();
-    _timer?.cancel();
-    setState(() {
-      _isRecording = false;
-      _isRunning = false;
-    });
+    if (!_isRecording) return;
+    try {
+      await _recorder!.stopRecorder();
+    } catch (e) {
+      debugPrint('Stop recorder error: $e');
+    } finally {
+      _timer?.cancel();
+      if (mounted) {
+        setState(() {
+          _isRecording = false;
+          _isRunning = false;
+        });
+      }
+    }
   }
 
   Future<void> _stopRecordingAndSubmit() async {
+    if (!_isRecording) return;
     await _stopRecording();
-    _submitTest();
+    await _submitTest();
   }
 
-  void _resetTest() {
+  void _resetTest() async {
     _timer?.cancel();
     setState(() {
       _seconds = 60;
@@ -117,54 +180,110 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
       _submitted = false;
       _result = null;
       _isRecording = false;
-      _audioPath = null;
+      _isSubmitting = false;
     });
+    // delete temporary audio if any
+    if (_audioPath != null) {
+      try {
+        final f = File(_audioPath!);
+        if (await f.exists()) {
+          await f.delete();
+        }
+      } catch (e) {
+        debugPrint('Failed to delete temp audio: $e');
+      } finally {
+        _audioPath = null;
+      }
+    }
   }
 
   Future<void> _submitTest() async {
-    if (_submitted || _audioPath == null) return;
-
-    setState(() => _submitted = true);
+    if (_submitted || _isSubmitting || _audioPath == null) return;
+    setState(() {
+      _isSubmitting = true;
+    });
 
     final file = File(_audioPath!);
     if (!await file.exists()) {
-      setState(() => _submitted = false);
+      setState(() {
+        _isSubmitting = false;
+      });
       debugPrint('Audio file not found: $_audioPath');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Recorded audio not found.')),
+        );
+      }
       return;
     }
 
-    final bytes = await file.readAsBytes();
-    final upload = MultipartFile.fromBytes(
-      'file', // variable name
-      bytes,
-      filename: _audioPath!.split('/').last,
-      contentType: MediaType('audio', 'm4a'), // or ('audio', 'mp4')
-    );
+    try {
+      final bytes = await file.readAsBytes();
+      final upload = MultipartFile.fromBytes(
+        'file', // field name; keep in sync with backend expectation for multipart
+        bytes,
+        filename: _audioPath!.split('/').last,
+        contentType: MediaType('audio', 'm4a'),
+      );
 
-    if (mounted) {
+      if (!mounted) return;
+
       final client = GraphQLProvider.of(context).value;
+      // If your mutation expects an 'Upload' variable named 'audioFile', adjust the key accordingly.
+      final mutationVariables = {
+        'referenceText': widget.referenceText,
+        'audioFile': upload,
+      };
 
-      // Make sure your mutation matches the server signature:
-      // mutation SubmitSpeakingTest($uid: String!, $referenceText: String!, $file: Upload!) { ... }
       final result = await client.mutate(
         MutationOptions(
           document: gql(submitSpeakingTestMutation),
-          variables: {
-            'referenceText': widget.referenceText,
-            'audioFile': upload,
-          },
+          variables: mutationVariables,
+          fetchPolicy: FetchPolicy.noCache,
         ),
       );
 
       if (result.hasException) {
-        debugPrint(result.exception.toString());
-        setState(() => _submitted = false);
+        debugPrint('GraphQL exception: ${result.exception}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Submit failed: ${result.exception}')),
+          );
+        }
+        setState(() {
+          _isSubmitting = false;
+          _submitted = false;
+        });
         return;
       }
 
+      final data = result.data?['submitSpeakingTest'];
       setState(() {
-        _result = result.data?['submitSpeakingTest'];
+        _submitted = true;
+        _result = (data is Map<String, dynamic>) ? data : null;
       });
+
+      // cleanup temp file after successful submit
+      try {
+        if (await file.exists()) await file.delete();
+      } catch (e) {
+        debugPrint('Failed to delete uploaded file: $e');
+      } finally {
+        _audioPath = null;
+      }
+    } catch (e) {
+      debugPrint('Submit error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('An error occurred while submitting.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 
@@ -192,7 +311,7 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
     );
   }
 
-  // ----- UI below unchanged from your version -----
+  // ----- UI below unchanged from your version, but with small safety checks -----
 
   Widget _buildTestView() {
     return Padding(
@@ -211,7 +330,10 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
 
   Widget _buildResultView() {
     final results = _result!;
-    final scores = results['scores'] as Map<String, dynamic>;
+    final scores = (results['scores'] ?? {}) as Map<String, dynamic>;
+    final overall = (scores['overall'] is num)
+        ? (scores['overall'] as num).toDouble()
+        : 0.0;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: ListView(
@@ -232,44 +354,52 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
               _StatCard(
                 icon: Icons.record_voice_over,
                 title: "Fluency",
-                value: (scores['fluency'] as num).toStringAsFixed(1),
+                value: (scores['fluency'] is num)
+                    ? (scores['fluency'] as num).toStringAsFixed(1)
+                    : '0.0',
               ).animate().fadeIn(delay: 300.ms).slideX(),
               _StatCard(
                 icon: Icons.rule,
                 title: "Grammar",
-                value: (scores['grammar'] as num).toStringAsFixed(1),
+                value: (scores['grammar'] is num)
+                    ? (scores['grammar'] as num).toStringAsFixed(1)
+                    : '0.0',
               ).animate().fadeIn(delay: 400.ms).slideX(),
               _StatCard(
                 icon: Icons.spellcheck,
                 title: "Pronunciation",
-                value: (scores['pronunciation'] as num).toStringAsFixed(1),
+                value: (scores['pronunciation'] is num)
+                    ? (scores['pronunciation'] as num).toStringAsFixed(1)
+                    : '0.0',
               ).animate().fadeIn(delay: 500.ms).slideX(),
             ],
           ),
           const SizedBox(height: 20),
           _buildOverallScoreGauge(
-            (scores['overall'] as num).toDouble(),
+            overall,
           ).animate().fadeIn(delay: 600.ms).scale(),
           const SizedBox(height: 20),
           _ResultDetailCard(
             title: "Your Transcript",
             icon: Icons.text_fields,
-            children: [Text(results['transcript'])],
+            children: [Text(results['transcript'] ?? '---')],
           ).animate().fadeIn(delay: 700.ms),
           const SizedBox(height: 12),
           _ResultDetailCard(
             title: "Mistakes",
             icon: Icons.warning_amber_rounded,
-            children: (results['mistakes'] as List).map((m) {
+            children: (results['mistakes'] as List? ?? []).map((m) {
+              final error = m?['error'] ?? '';
+              final correction = m?['correction'] ?? '';
               return Text.rich(
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: "${m['error']} → ",
+                      text: "$error → ",
                       style: TextStyle(color: themeColors['incorrect']!),
                     ),
                     TextSpan(
-                      text: m['correction'],
+                      text: correction,
                       style: TextStyle(color: themeColors['correct']!),
                     ),
                   ],
@@ -281,7 +411,7 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
           _ResultDetailCard(
             title: "Suggestions",
             icon: Icons.lightbulb_outline,
-            children: (results['suggestions'] as List)
+            children: (results['suggestions'] as List? ?? [])
                 .map((s) => Text("• $s"))
                 .toList(),
           ).animate().fadeIn(delay: 900.ms),
@@ -332,9 +462,18 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
           ),
           const SizedBox(width: 40),
           ElevatedButton.icon(
-            icon: const Icon(Icons.send),
-            label: const Text("Submit"),
-            onPressed: _submitTest,
+            icon: _isSubmitting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.send),
+            label: Text(_isSubmitting ? "Submitting..." : "Submit"),
+            onPressed: _isSubmitting ? null : _submitTest,
             style: ElevatedButton.styleFrom(
               backgroundColor: themeColors['accent']!.withAlpha(204),
               foregroundColor: Colors.white,
@@ -383,7 +522,7 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
     return CircularPercentIndicator(
       radius: 80.0,
       lineWidth: 12.0,
-      percent: score / 100,
+      percent: (score.clamp(0.0, 100.0)) / 100,
       center: Text(
         score.toStringAsFixed(1),
         style: GoogleFonts.poppins(
