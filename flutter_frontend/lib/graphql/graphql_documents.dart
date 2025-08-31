@@ -108,8 +108,8 @@ const String generateTypingTestTextQuery = r'''
 // speaking
 
 const String submitSpeakingTestMutation = r'''
-mutation SubmitSpeakingTest($referenceText: String!, $audioBase64: String!) {
-  submitSpeakingTest(referenceText: $referenceText, audioBase64: $audioBase64) {
+mutation SubmitSpeakingTest($referenceText: String!, $audioFile: Upload!) {
+  submitSpeakingTest(referenceText: $referenceText, audioFile: $audioFile) {
     id
     transcript
     scores {

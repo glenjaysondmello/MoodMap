@@ -93,7 +93,7 @@ type Mutation {
   updateMood(id: String!, input: MoodLogInput!): MoodEntry!
   deleteMood(id: String!): Boolean!
   submitTypingTest(referenceText: String!, userText: String!, durationSec: Float!): TypingTest!
-  submitSpeakingTest(referenceText: String!, audioBase64: String!): SpeakingTest!
+  submitSpeakingTest(referenceText: String!, audioFile: Upload!): SpeakingTest!
 }
 
 input MoodLogInput {
@@ -112,3 +112,6 @@ enum MoodType {
   TIRED
   STRESSED
 }
+
+"""The `Upload` scalar type represents a file upload."""
+scalar Upload

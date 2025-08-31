@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { evaluateWithGroq } from 'src/utils/ai-evaluatar-speaking';
 import { transcribeAudio } from '../utils/whisper';
+import { FileUpload } from 'graphql-upload/processRequest.mjs';
 import Groq from 'groq-sdk';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class SpeakingTestService {
@@ -57,13 +60,27 @@ export class SpeakingTestService {
   async submitSpeakingTest(
     uid: string,
     referenceText: string,
-    audioBase64: string,
+    audioFile: FileUpload,
   ) {
     let transcript = '';
     let aiResult: any;
 
+    const { createReadStream, filename } = audioFile;
+    const uploadDir = path.join(__dirname, '../../uploads');
+
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+    const filePath = path.join(uploadDir, filename);
+
+    await new Promise((resolve: any, reject) => {
+      const stream = createReadStream().pipe(fs.createWriteStream(filePath));
+
+      stream.on('finish', resolve);
+      stream.on('error', reject);
+    });
+
     try {
-      transcript = await transcribeAudio(audioBase64);
+      transcript = await transcribeAudio(filePath);
     } catch (err) {
       console.error('Transcription failed:', err);
       throw new Error('Audio transcription failed. Please try again.');

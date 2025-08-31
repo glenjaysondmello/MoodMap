@@ -3,6 +3,8 @@ import { SpeakingTestService } from './speaking_test.service';
 import { SpeakingTest } from './models/speaking-test.model';
 import { UseGuards } from '@nestjs/common';
 import { FirebaseAuthGuard } from 'src/auth/firebase-auth.guard';
+import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
+import { FileUpload } from 'graphql-upload/processRequest.mjs';
 
 interface GqlContext {
   req: { user: { uid: string } };
@@ -27,14 +29,15 @@ export class SpeakingTestResolver {
   @Mutation(() => SpeakingTest)
   async submitSpeakingTest(
     @Args('referenceText') referenceText: string,
-    @Args('audioBase64') audioBase64: string,
+    @Args({ name: 'audioFile', type: () => GraphQLUpload })
+    audioFile: FileUpload,
     @Context() context: GqlContext,
   ) {
     const userId = context.req.user.uid;
     return this.speakingService.submitSpeakingTest(
       userId,
       referenceText,
-      audioBase64,
+      audioFile,
     );
   }
 }

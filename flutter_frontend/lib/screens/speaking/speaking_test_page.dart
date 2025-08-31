@@ -149,7 +149,10 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
       final result = await client.mutate(
         MutationOptions(
           document: gql(submitSpeakingTestMutation),
-          variables: {'referenceText': widget.referenceText, 'file': upload},
+          variables: {
+            'referenceText': widget.referenceText,
+            'audioFile': upload,
+          },
         ),
       );
 

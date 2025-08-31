@@ -3,7 +3,10 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 ValueNotifier<GraphQLClient> getGraphQLClient() {
-  final httpLink = HttpLink("http://192.168.1.7:3000/graphql");
+  final httpLink = HttpLink(
+    "http://192.168.1.7:3000/graphql",
+    defaultHeaders: {'x-apollo-operation-name': 'UploadFile'},
+  );
 
   final authLink = AuthLink(
     getToken: () async {
