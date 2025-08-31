@@ -97,18 +97,18 @@ class DashboardSpeaking extends StatelessWidget {
               }
 
               // Data Processing for chart
-              tests.sort((a, b) {
-                final dateA =
-                    DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime(1970);
-                final dateB =
-                    DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime(1970);
-                return dateA.compareTo(dateB);
-              });
+              // tests.sort((a, b) {
+              //   final dateA =
+              //       DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime(1970);
+              //   final dateB =
+              //       DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime(1970);
+              //   return dateA.compareTo(dateB);
+              // });
 
-              final latestTest = tests.last;
-              final latestDate = DateTime.tryParse(
-                latestTest['createdAt'] ?? '',
-              );
+              // final latestTest = tests.last;
+              // final latestDate = DateTime.tryParse(
+              //   latestTest['createdAt'] ?? '',
+              // );
 
               // Compute averages for all tests
               Map<String, double> averageScores = {
@@ -136,13 +136,13 @@ class DashboardSpeaking extends StatelessWidget {
               String avgScore(String key) =>
                   averageScores[key]?.toStringAsFixed(1) ?? "0.0";
 
-              String safeScore(Map scores, String key) {
-                final val = scores?[key];
-                if (val is num) {
-                  return val.toStringAsFixed(1);
-                }
-                return "0.0";
-              }
+              // String safeScore(Map scores, String key) {
+              //   final val = scores?[key];
+              //   if (val is num) {
+              //     return val.toStringAsFixed(1);
+              //   }
+              //   return "0.0";
+              // }
 
               return RefreshIndicator(
                 onRefresh: refetch!,
@@ -150,21 +150,21 @@ class DashboardSpeaking extends StatelessWidget {
                   padding: const EdgeInsets.all(16.0),
                   children: [
                     Text(
-                      "Latest Test Analysis",
+                      "Test Analysis",
                       style: GoogleFonts.poppins(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: themeColors['text'],
                       ),
                     ).animate().fadeIn(duration: 400.ms).slideX(),
-                    if (latestDate != null)
-                      Text(
-                        "Taken on ${DateFormat.yMMMd().format(latestDate)}",
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: themeColors['textFaded'],
-                        ),
-                      ),
+                    // if (latestDate != null)
+                    //   Text(
+                    //     "Taken on ${DateFormat.yMMMd().format(latestDate)}",
+                    //     style: GoogleFonts.poppins(
+                    //       fontSize: 14,
+                    //       color: themeColors['textFaded'],
+                    //     ),
+                    //   ),
                     const SizedBox(height: 16),
 
                     // Summary Stat Cards for the AVERAGE of all tests

@@ -31,7 +31,7 @@ class _TypingTestPageState extends State<TypingTestPage> {
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
 
-  int _seconds = 120;
+  int _seconds = 60;
   Timer? _timer;
   bool _isRunning = false;
   bool _submitted = false;
@@ -107,7 +107,7 @@ class _TypingTestPageState extends State<TypingTestPage> {
   void _startTimer() {
     setState(() {
       _isRunning = true;
-      _seconds = 120;
+      _seconds = 60;
       _startTime = DateTime.now();
     });
 
@@ -127,7 +127,7 @@ class _TypingTestPageState extends State<TypingTestPage> {
     _timer?.cancel();
     _controller.clear();
     setState(() {
-      _seconds = 120;
+      _seconds = 60;
       _isRunning = false;
       _submitted = false;
       _result = null;
@@ -135,7 +135,12 @@ class _TypingTestPageState extends State<TypingTestPage> {
       _wpm = 0;
       _accuracy = 100.0;
     });
-    FocusScope.of(context).requestFocus(_focusNode);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        FocusScope.of(context).requestFocus(_focusNode);
+      }
+    });
   }
 
   Future<void> _submitTest() async {
@@ -144,7 +149,7 @@ class _TypingTestPageState extends State<TypingTestPage> {
 
     final duration = _startTime != null
         ? DateTime.now().difference(_startTime!).inSeconds.toDouble()
-        : 120.0 - _seconds;
+        : 60.0 - _seconds;
 
     setState(() {
       _isRunning = false;

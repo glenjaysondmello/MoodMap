@@ -49,7 +49,7 @@ export const evaluateWithGroq = async (payload: {
       {
         role: 'system',
         content:
-          'You are a strict but fair English evaluation expert. Your task is to analyze a user\'s speech transcript by comparing it to a reference text. You MUST return a JSON object with the exact structure: { "scores": { "fluency": number, "pronunciation": number, "grammar": number, "vocabulary": number, "overall": number }, "mistakes": [{ "error": string, "correction": string, "type": string }], "suggestions": [string], "encouragement": string }. All scores must be integers from 0 to 100. The "mistakes" array should detail every deviation. The "type" can be "Pronunciation", "Grammar", "Omission", "Insertion", or "Word Choice". If there are no mistakes, return an empty array. Provide actionable suggestions for improvement.',
+          'You are a strict but fair English evaluation expert. Your task is to analyze a user\'s speech transcript by comparing it to a reference text. You MUST return a JSON object with the exact structure: { "scores": { "fluency": number, "pronunciation": number, "grammar": number, "vocabulary": number, "overall": number }, "mistakes": [{ "error": string, "correction": string, "type": string }], "suggestions": [string], "encouragement": string }. All scores must be integers from 0 to 100. The "mistakes" array should detail every deviation. The "type" can be "Pronunciation", "Grammar", "Omission", "Insertion", or "Word Choice". **Specifically, if a word from the reference text is missing in the transcript, create a mistake object where "type" is "Omission", "error" is the literal string "(missing)", and "correction" is the word that was missed.** If there are no mistakes, return an empty array. Provide actionable suggestions for improvement.',
       },
       {
         role: 'user',
@@ -77,7 +77,7 @@ export const evaluateWithGroq = async (payload: {
   parsed.scores = Object.fromEntries(
     Object.entries(parsed.scores).map(([k, v]) => [
       k,
-      Math.max(0, Math.min(100, Number(v))),
+      Math.max(0, Math.min(100, Number(v) || 0)),
     ]),
   ) as AiEvaluationResult['scores'];
 

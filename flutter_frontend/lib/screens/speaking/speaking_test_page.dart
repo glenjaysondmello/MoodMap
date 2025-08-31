@@ -36,7 +36,7 @@ class SpeakingTestPage extends StatefulWidget {
 class _SpeakingTestPageState extends State<SpeakingTestPage> {
   int _seconds = 60;
   Timer? _timer;
-  bool _isRunning = false;
+  bool? _isRunning = false;
 
   FlutterSoundRecorder? _recorder;
   bool _isRecording = false;

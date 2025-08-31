@@ -21,7 +21,10 @@ class SpeakingTestLauncherPage extends StatelessWidget {
     final client = GraphQLProvider.of(context).value;
     try {
       final result = await client.query(
-        QueryOptions(document: gql(generateSpeakingTestTextQuery)),
+        QueryOptions(
+          document: gql(generateSpeakingTestTextQuery),
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
       );
 
       // Dismiss the loading dialog
