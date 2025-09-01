@@ -44,7 +44,7 @@ export const evaluateWithGroq = async (payload: {
   }
 
   const response = await groq.chat.completions.create({
-    model: 'llama3-70b-8192',
+    model: 'gemma2-9b-it',
     messages: [
       {
         role: 'system',

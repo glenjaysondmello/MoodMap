@@ -20,7 +20,7 @@ export class SpeakingTestService {
   async generateSpeakingText(): Promise<string> {
     try {
       const response = await this.client.chat.completions.create({
-        model: 'llama3-8b-8192',
+        model: 'gemma2-9b-it',
         messages: [
           {
             role: 'system',
