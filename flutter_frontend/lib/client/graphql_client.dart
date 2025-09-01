@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 ValueNotifier<GraphQLClient> getGraphQLClient() {
   final httpLink = HttpLink(
-    "http://192.168.1.7:3000/graphql",
+    "https://fluentedge.onrender.com/graphql",
     defaultHeaders: {'x-apollo-operation-name': 'UploadFile'},
   );
 

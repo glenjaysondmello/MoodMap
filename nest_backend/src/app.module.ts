@@ -16,7 +16,7 @@ import { SpeakingTestModule } from './speaking_test/speaking_test.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
     }),
     MongooseModule.forRoot(process.env.MONGO_URI || ''),
     GraphQLModule.forRoot<ApolloDriverConfig>({
