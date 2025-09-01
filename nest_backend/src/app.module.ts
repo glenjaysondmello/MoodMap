@@ -22,8 +22,6 @@ import { SpeakingTestModule } from './speaking_test/speaking_test.module';
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
-      playground: true,
-      introspection: true,
     }),
     AuthModule,
     MoodModule,
