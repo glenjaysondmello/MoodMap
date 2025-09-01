@@ -62,50 +62,32 @@ export class SpeakingTestService {
     referenceText: string,
     audioFile: FileUpload,
   ) {
-    let transcript = '';
-    let aiResult: any;
-
-    const { createReadStream, filename } = audioFile;
-    const uploadDir = path.join(__dirname, '../../uploads');
-
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-    const filePath = path.join(uploadDir, filename);
-
-    await new Promise((resolve: any, reject) => {
-      const stream = createReadStream().pipe(fs.createWriteStream(filePath));
-
-      stream.on('finish', resolve);
-      stream.on('error', reject);
-    });
-
     try {
-      transcript = await transcribeAudio(filePath);
-    } catch (err) {
-      console.error('Transcription failed:', err);
-      throw new Error('Audio transcription failed. Please try again.');
-    }
+      // const [transcript] = await Promise.all([transcribeAudio(audioFile)]);
 
-    try {
-      aiResult = await evaluateWithGroq({
+      const transcript = await transcribeAudio(audioFile);
+
+      const aiResult = await evaluateWithGroq({
         referenceText,
         transcript,
       });
-    } catch (err) {
-      console.error('Evaluation failed:', err);
-      throw new Error('AI evaluation failed. Please try again.');
-    }
 
-    return this.prismaService.speakingTest.create({
-      data: {
-        uid,
-        referenceText,
-        transcript,
-        scores: aiResult.scores,
-        mistakes: aiResult.mistakes,
-        suggestions: aiResult.suggestions,
-        encouragement: aiResult.encouragement,
-      },
-    });
+      return this.prismaService.speakingTest.create({
+        data: {
+          uid,
+          referenceText,
+          transcript,
+          scores: aiResult.scores,
+          mistakes: aiResult.mistakes,
+          suggestions: aiResult.suggestions,
+          encouragement: aiResult.encouragement,
+        },
+      });
+    } catch (err) {
+      console.error('Error in submitSpeakingTest:', err);
+      throw new Error(
+        'An unexpected error occurred while processing your test.',
+      );
+    }
   }
 }
