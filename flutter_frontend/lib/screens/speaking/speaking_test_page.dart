@@ -106,7 +106,7 @@ class _SpeakingTestPageState extends State<SpeakingTestPage> {
 
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_seconds <= 1) {
+      if (_seconds <= 0) {
         timer.cancel();
         if (_isRecording) _stopRecordingAndSubmit();
       } else {

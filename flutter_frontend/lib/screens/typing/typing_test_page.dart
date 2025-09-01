@@ -112,7 +112,7 @@ class _TypingTestPageState extends State<TypingTestPage> {
     });
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_seconds <= 1) {
+      if (_seconds <= 0) {
         timer.cancel();
         _submitTest();
       } else {
